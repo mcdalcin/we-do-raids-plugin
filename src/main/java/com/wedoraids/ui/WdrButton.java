@@ -86,7 +86,7 @@ public class WdrButton extends JButton
 		switch (variant)
 		{
 			case PRIMARY:
-				return WdrTheme.ACCENT_INK; // dark ink on the accent fill
+				return WdrTheme.ACCENT_INK; // light ink on the deep accent fill
 			case DANGER:
 				return WdrTheme.ERROR;
 			case GHOST:

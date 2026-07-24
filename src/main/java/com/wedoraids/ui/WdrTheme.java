@@ -62,25 +62,33 @@ public final class WdrTheme
 	public static final Color TEXT_MUTED = new Color(146, 146, 146);
 
 	/**
-	 * The single non-data accent, and the fill of the one primary action in a view.
+	 * The fill of the one primary action in a view: the WDR green, deepened into a surface.
 	 *
-	 * <p>Neutral by design: every hue available collides with something. Green reads as CoX,
-	 * purple as ToB, amber as ToA, and blue is the generic tech-tool default this panel avoids.
+	 * <p>A primary control on a dark panel earns its rank through chroma, not brightness. The
+	 * previous neutral fills tried to earn it through brightness and failed twice over: near-white
+	 * glared at 62 times the card's luminance, and the softened mid-grey still sat at 36 times while
+	 * carrying no chroma at all, which made it read as a disabled control and forced dark ink,
+	 * inverting the panel's dark-surface/light-text language. Measured, the dark-tool primaries this
+	 * resembles sit near 14 times: GitHub's green and Discord's blurple both do. This ramp lands at
+	 * 11 to 14 times with white ink above it, so the button matches the panel instead of fighting it.
 	 *
-	 * <p>Its value is tuned for a dark surface rather than for maximum contrast. At the previous
-	 * near-white it measured 62 times the luminance of the card it sits on, with hover at pure
-	 * white reaching 77 times, which made the brightest thing in the panel a button rather than
-	 * the raid information, and made the moment of interaction the harshest moment. The ramp below
-	 * roughly halves that while keeping the fill unmistakably a primary action (8.3:1 against the
-	 * card) and its ink comfortably legible.
+	 * <p>Green is the WDR brand, and using it here does not break the rule that hue means raid.
+	 * That rule governs the information layer, where a raid's hue appears as light text and a card
+	 * edge around OKLCH lightness 0.76. This is a control, filled, at lightness 0.50: a different
+	 * channel and a different band, never rendered inside a raid card. The alternatives were worse.
+	 * Amber and purple sit closer to ToA and ToB in role as well as hue, red is spoken for by
+	 * failure, and blue is the generic tech-tool accent PRODUCT.md lists as an anti-reference.
+	 *
+	 * <p>Sized from the hover step down: hover is the lightest state, so it sets the ceiling that
+	 * keeps white ink past 4.5:1 everywhere.
 	 */
-	public static final Color ACCENT = new Color(183, 183, 183);
-	/** Hover step: perceptible (OKLCH L +0.05) without returning to a glare. */
-	public static final Color ACCENT_HOVER = new Color(199, 199, 199);
-	/** Pressed step: darker than the base, so the ramp reads in one direction. */
-	public static final Color ACCENT_PRESSED = new Color(161, 161, 161);
-	/** Ink on the accent ramp. Clears 4.5:1 on all three steps. */
-	public static final Color ACCENT_INK = new Color(24, 24, 24);
+	public static final Color ACCENT = new Color(0, 122, 53);
+	/** Hover step. The lightest state, and still 4.64:1 under white ink. */
+	public static final Color ACCENT_HOVER = new Color(26, 134, 65);
+	/** Pressed step: deeper than the base, so the ramp reads in one direction. */
+	public static final Color ACCENT_PRESSED = new Color(0, 103, 44);
+	/** Ink on the accent ramp. White, so the button keeps the panel's light-on-dark language. */
+	public static final Color ACCENT_INK = new Color(255, 255, 255);
 
 	/** Failure and destructive intent. The only place chroma appears outside raid identity. */
 	public static final Color ERROR = new Color(232, 92, 92);
