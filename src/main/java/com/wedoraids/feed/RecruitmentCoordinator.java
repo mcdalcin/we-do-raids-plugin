@@ -25,24 +25,18 @@
 package com.wedoraids.feed;
 
 import com.wedoraids.WeDoRaidsConfig;
-import com.wedoraids.panel.WeDoRaidsPanel;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.LongSupplier;
 
 public final class RecruitmentCoordinator
 {
-	@FunctionalInterface
-	public interface PanelUpdater
-	{
-		void update(long generation, Consumer<WeDoRaidsPanel> update);
-	}
-
 	private final WeDoRaidsConfig config;
 	private final List<RecruitEntry> demoEntries;
 	private final Set<String> notifiedKeys;
@@ -52,12 +46,12 @@ public final class RecruitmentCoordinator
 	private final BooleanSupplier localVerified;
 	private final LongSupplier identityGeneration;
 	private final Consumer<RecruitEntry> notifyRecruit;
-	private final PanelUpdater panelUpdater;
+	private final BiConsumer<Long, List<RecruitEntry>> entriesPublisher;
 
 	public RecruitmentCoordinator(WeDoRaidsConfig config, List<RecruitEntry> demoEntries, Set<String> notifiedKeys,
 		Set<String> activeTobHosts, Set<String> activeToaHosts, BooleanSupplier localBanned,
 		BooleanSupplier localVerified, LongSupplier identityGeneration, Consumer<RecruitEntry> notifyRecruit,
-		PanelUpdater panelUpdater)
+		BiConsumer<Long, List<RecruitEntry>> entriesPublisher)
 	{
 		this.config = config;
 		this.demoEntries = demoEntries;
@@ -68,7 +62,7 @@ public final class RecruitmentCoordinator
 		this.localVerified = localVerified;
 		this.identityGeneration = identityGeneration;
 		this.notifyRecruit = notifyRecruit;
-		this.panelUpdater = panelUpdater;
+		this.entriesPublisher = entriesPublisher;
 	}
 
 	public void accept(List<RecruitEntry> entries)
@@ -100,7 +94,7 @@ public final class RecruitmentCoordinator
 		activeTobHosts.addAll(projection.getTobHosts());
 		activeToaHosts.clear();
 		activeToaHosts.addAll(projection.getToaHosts());
-		panelUpdater.update(generation, panel -> panel.setEntries(projection.getEntries()));
+		entriesPublisher.accept(generation, projection.getEntries());
 	}
 
 	private boolean passesFilters(RecruitEntry entry)

@@ -565,6 +565,31 @@ public class WeDoRaidsPlugin extends Plugin
 		});
 	}
 
+	/**
+	 * Like {@link #runOnPanel} but holds {@code identityLock} across the generation check and the
+	 * transition, so a concurrent identity change cannot slip between the check and the ownership
+	 * write. Used only for hosted/closed transitions, which mutate {@code hostLiveOwner}; the
+	 * transition acquires no other lock, preserving lock order.
+	 */
+	private void runHostTransition(long generation, java.util.function.Consumer<WeDoRaidsPanel> transition)
+	{
+		final WeDoRaidsPanel currentPanel = panel;
+		if (currentPanel == null)
+		{
+			return;
+		}
+		SwingUtilities.invokeLater(() ->
+		{
+			synchronized (identityLock)
+			{
+				if (identityGeneration.get() == generation && panel == currentPanel)
+				{
+					transition.accept(currentPanel);
+				}
+			}
+		});
+	}
+
 	private void setViewerName(String viewer)
 	{
 		final String normalized = viewer == null || viewer.trim().isEmpty() ? null : viewer.trim();
@@ -771,8 +796,16 @@ public class WeDoRaidsPlugin extends Plugin
 		if (hostInteractionController == null)
 		{
 			hostInteractionController = new HostInteractionController(config, this::bridgeClient, client,
-				clientThread, notifier, partyService, identityGeneration::get, () -> localPlayerName,
-				owner -> hostLiveOwner = owner, this::runOnPanel);
+				clientThread, notifier, partyService, identityGeneration::get,
+				(generation, messageId) -> runHostTransition(generation, p ->
+				{
+					hostLiveOwner = localPlayerName;
+					p.enterHostLive(messageId);
+				}), generation -> runHostTransition(generation, p ->
+				{
+					hostLiveOwner = null;
+					p.exitHostLive();
+				}));
 		}
 		return hostInteractionController;
 	}
@@ -811,7 +844,8 @@ public class WeDoRaidsPlugin extends Plugin
 		{
 			recruitmentCoordinator = new RecruitmentCoordinator(config, demoEntries, notifiedKeys,
 				activeTobHosts, activeToaHosts, () -> localBanned, () -> localVerified,
-				identityGeneration::get, this::notifyRecruit, this::runOnPanel);
+				identityGeneration::get, this::notifyRecruit,
+				(generation, entries) -> runOnPanel(generation, p -> p.setEntries(entries)));
 		}
 		return recruitmentCoordinator;
 	}
