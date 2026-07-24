@@ -62,12 +62,24 @@ public final class WdrTheme
 	public static final Color TEXT_MUTED = new Color(146, 146, 146);
 
 	/**
-	 * The single non-data accent. Neutral by design: a chromatic accent would either collide
-	 * with a raid hue or add a fourth colour to a 225px column. Reserved for the one primary
-	 * action in a view, never for decoration.
+	 * The single non-data accent, and the fill of the one primary action in a view.
+	 *
+	 * <p>Neutral by design: every hue available collides with something. Green reads as CoX,
+	 * purple as ToB, amber as ToA, and blue is the generic tech-tool default this panel avoids.
+	 *
+	 * <p>Its value is tuned for a dark surface rather than for maximum contrast. At the previous
+	 * near-white it measured 62 times the luminance of the card it sits on, with hover at pure
+	 * white reaching 77 times, which made the brightest thing in the panel a button rather than
+	 * the raid information, and made the moment of interaction the harshest moment. The ramp below
+	 * roughly halves that while keeping the fill unmistakably a primary action (8.3:1 against the
+	 * card) and its ink comfortably legible.
 	 */
-	public static final Color ACCENT = new Color(232, 232, 232);
-	/** Ink on {@link #ACCENT}. */
+	public static final Color ACCENT = new Color(183, 183, 183);
+	/** Hover step: perceptible (OKLCH L +0.05) without returning to a glare. */
+	public static final Color ACCENT_HOVER = new Color(199, 199, 199);
+	/** Pressed step: darker than the base, so the ramp reads in one direction. */
+	public static final Color ACCENT_PRESSED = new Color(161, 161, 161);
+	/** Ink on the accent ramp. Clears 4.5:1 on all three steps. */
 	public static final Color ACCENT_INK = new Color(24, 24, 24);
 
 	/** Failure and destructive intent. The only place chroma appears outside raid identity. */

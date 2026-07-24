@@ -86,7 +86,7 @@ public class WdrButton extends JButton
 		switch (variant)
 		{
 			case PRIMARY:
-				return WdrTheme.ACCENT_INK; // dark ink on the bright accent fill
+				return WdrTheme.ACCENT_INK; // dark ink on the accent fill
 			case DANGER:
 				return WdrTheme.ERROR;
 			case GHOST:
@@ -101,7 +101,7 @@ public class WdrButton extends JButton
 		switch (variant)
 		{
 			case PRIMARY:
-				return pressed ? WdrTheme.TEXT_DIM : (hover ? Color.WHITE : WdrTheme.ACCENT);
+				return pressed ? WdrTheme.ACCENT_PRESSED : (hover ? WdrTheme.ACCENT_HOVER : WdrTheme.ACCENT);
 			case DANGER:
 				return pressed ? WdrTheme.BORDER : (hover ? WdrTheme.ERROR_FILL : WdrTheme.FIELD);
 			case GHOST:
