@@ -28,7 +28,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Owns confirmed remote fields and operation sequencing; {@link HostFormPanel} owns displayed and draft maps.
+ * Owns confirmed live fields and operation sequencing. {@link HostLivePostPanel} owns and mutates displayed and
+ * draft fields; {@link HostFormPanel} keeps a callback-synchronized alias of the displayed fields.
  * Each lifecycle transition advances the token; stale callbacks fail {@code isCurrentOperation} and
  * {@code completeOperation} is a no-op.
  */

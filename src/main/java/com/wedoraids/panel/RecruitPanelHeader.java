@@ -27,11 +27,11 @@ package com.wedoraids.panel;
 import com.wedoraids.WeDoRaidsConfig;
 import com.wedoraids.WeDoRaidsPlugin;
 import com.wedoraids.bridge.BridgeStatus;
+import com.wedoraids.ui.ImageScale;
 import com.wedoraids.ui.WdrTheme;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.Image;
 import java.awt.image.BufferedImage;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -74,7 +74,7 @@ final class RecruitPanelHeader extends JPanel
 		titleRow.setOpaque(false);
 		if (logo != null)
 		{
-			titleRow.add(new JLabel(new ImageIcon(scale(logo, 40))), BorderLayout.WEST);
+			titleRow.add(new JLabel(new ImageIcon(ImageScale.scale(logo, 40))), BorderLayout.WEST);
 		}
 		titleRow.add(title, BorderLayout.CENTER);
 		titleRow.add(refreshButton, BorderLayout.EAST);
@@ -170,9 +170,4 @@ final class RecruitPanelHeader extends JPanel
 		}
 	}
 
-	private static Image scale(BufferedImage image, int height)
-	{
-		int width = Math.max(1, image.getWidth() * height / image.getHeight());
-		return image.getScaledInstance(width, height, Image.SCALE_SMOOTH);
-	}
 }

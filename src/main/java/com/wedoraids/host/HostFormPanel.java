@@ -55,6 +55,7 @@ public class HostFormPanel extends JPanel
 	private boolean expanded;
 	private boolean editingLive;
 	private Map<String, String> lastSubmittedFields;
+	/** Test-visible alias of {@link HostLivePostPanel}'s displayed fields, synchronized by callback. */
 	private Map<String, String> displayedLiveFields;
 
 	public HostFormPanel(HostDependencies dependencies)

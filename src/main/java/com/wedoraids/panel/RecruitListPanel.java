@@ -26,11 +26,12 @@ package com.wedoraids.panel;
 
 import com.wedoraids.feed.RaidType;
 import com.wedoraids.feed.RecruitEntry;
+import com.wedoraids.ui.HtmlEscape;
+import com.wedoraids.ui.ImageScale;
 import com.wedoraids.ui.WdrScrollBarUI;
 import com.wedoraids.ui.WdrTheme;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
@@ -241,7 +242,7 @@ final class RecruitListPanel extends JPanel
 			BorderFactory.createEmptyBorder(18, 12, 18, 12)));
 		if (logo != null)
 		{
-			JLabel logoLabel = new JLabel(new ImageIcon(scale(logo, 52)));
+			JLabel logoLabel = new JLabel(new ImageIcon(ImageScale.scale(logo, 52)));
 			logoLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 			panel.add(logoLabel);
 			panel.add(Box.createVerticalStrut(10));
@@ -253,7 +254,7 @@ final class RecruitListPanel extends JPanel
 		panel.add(titleLabel);
 		panel.add(Box.createVerticalStrut(4));
 		JLabel descLabel = new JLabel("<html><div style='text-align:center;width:150px'>"
-			+ escapeHtml(description) + "</div></html>");
+			+ HtmlEscape.escape(description) + "</div></html>");
 		descLabel.setForeground(WdrTheme.TEXT_DIM);
 		descLabel.setFont(FontManager.getRunescapeSmallFont());
 		descLabel.setHorizontalAlignment(SwingConstants.CENTER);
@@ -273,17 +274,6 @@ final class RecruitListPanel extends JPanel
 	private int countEntries(RaidType raid)
 	{
 		return (int) entries.stream().filter(entry -> entry.getRaidType() == raid).count();
-	}
-
-	private static String escapeHtml(String value)
-	{
-		return value.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
-	}
-
-	private static Image scale(BufferedImage image, int height)
-	{
-		int width = Math.max(1, image.getWidth() * height / image.getHeight());
-		return image.getScaledInstance(width, height, Image.SCALE_SMOOTH);
 	}
 
 	private static String hex(java.awt.Color color)

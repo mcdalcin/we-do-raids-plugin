@@ -24,6 +24,7 @@
  */
 package com.wedoraids.host;
 
+import com.wedoraids.ui.HtmlEscape;
 import com.wedoraids.ui.WdrButton;
 import com.wedoraids.ui.WdrTheme;
 import java.awt.Component;
@@ -111,7 +112,7 @@ final class HostLivePostView extends JPanel
 
 	void setStatus(String message, boolean error)
 	{
-		status.setText("<html><body style='width:180px'>" + escapeHtml(message) + "</body></html>");
+		status.setText("<html><body style='width:180px'>" + HtmlEscape.escape(message) + "</body></html>");
 		status.setForeground(error ? WdrTheme.ERROR : WdrTheme.TEXT_DIM);
 	}
 
@@ -242,8 +243,4 @@ final class HostLivePostView extends JPanel
 		}
 	}
 
-	private static String escapeHtml(String value)
-	{
-		return value == null ? "" : value.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
-	}
 }
