@@ -83,6 +83,11 @@ public final class BridgeClient
 		String error;
 	}
 
+	static final class BanCheckResult
+	{
+		boolean banned;
+	}
+
 	private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
 	private final WeDoRaidsConfig config;
 	private final OkHttpClient okHttpClient;
@@ -171,6 +176,70 @@ public final class BridgeClient
 				catch (Exception exception)
 				{
 					log.debug("We Do Raids: bad KC response", exception);
+				}
+			}
+		});
+	}
+
+	/**
+	 * Asks the bridge whether {@code name} is on the WDR ban list; {@code onBanned} runs on
+	 * the EDT only when the answer is yes and the identity that asked is still current.
+	 * Failures and negative answers are silent: this backs an advisory host alert, and a
+	 * missed warning is better than a false accusation or an error popup mid-raid.
+	 */
+	public void checkBanned(String name, Consumer<String> onBanned)
+	{
+		if (config.demoData() || config.remoteFeedKey().trim().isEmpty() || name == null || name.isEmpty())
+		{
+			return;
+		}
+		final IdentitySnapshot snapshot = identitySnapshot.get();
+		if (snapshot.viewer == null)
+		{
+			return;
+		}
+		final HttpUrl feed = HttpUrl.parse(bridgeUrl.get());
+		if (feed == null || feed.pathSize() == 0)
+		{
+			return;
+		}
+		final HttpUrl.Builder url = feed.newBuilder()
+			.setPathSegment(feed.pathSize() - 1, "banned")
+			.addQueryParameter("name", name)
+			.addQueryParameter("key", config.remoteFeedKey().trim());
+		okHttpClient.newCall(new Request.Builder().url(url.build()).build()).enqueue(new Callback()
+		{
+			@Override
+			public void onFailure(Call call, IOException exception)
+			{
+				log.debug("We Do Raids: ban check failed", exception);
+			}
+
+			@Override
+			public void onResponse(Call call, Response response)
+			{
+				try (Response currentResponse = response)
+				{
+					if (!currentResponse.isSuccessful() || currentResponse.body() == null)
+					{
+						return;
+					}
+					final BanCheckResult result =
+						gson.fromJson(currentResponse.body().charStream(), BanCheckResult.class);
+					if (result != null && result.banned)
+					{
+						SwingUtilities.invokeLater(() ->
+						{
+							if (currentIdentity.test(snapshot.generation, snapshot.viewer))
+							{
+								onBanned.accept(name);
+							}
+						});
+					}
+				}
+				catch (Exception exception)
+				{
+					log.debug("We Do Raids: bad ban check response", exception);
 				}
 			}
 		});

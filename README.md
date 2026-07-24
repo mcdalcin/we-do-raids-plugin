@@ -23,6 +23,7 @@ The plugin talks to the We Do Raids bridge (`wdr.timecapsule.ink`), the communit
 - Nothing is sent until you enter a verification key. Demo mode is fully local and makes no bridge requests.
 - When fetching the live feed, the plugin sends your logged-in RuneScape name and verification key so the bridge can verify you and enforce the WDR ban list.
 - When you post, update or close a raid, the bridge also receives the values you entered in the hosting form (raid, tier, world, party size, spots, roles, scale, fc, layout, party hub and description), the message id of an existing post, and your in-game name.
+- While you are hosting, the names of players who join your RuneLite party are checked against the WDR ban list, which sends each joiner's name to the bridge once. This powers the banned-joiner warning and can be turned off by leaving the party or closing your post.
 - Your key is stored as a secret RuneLite configuration value. The plugin also remembers your last raid and tier filter selections; it does not persist recruitment or host-post data.
 
 ## Affiliation
