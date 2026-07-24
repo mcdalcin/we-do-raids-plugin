@@ -101,13 +101,13 @@ public final class HostInteractionController
 	public void warnHostIdle()
 	{
 		notifier.notify(config.hostIdleNotify(),
-			"Your We Do Raids party is idle. Open the plugin and click \"I'm here\" or it will auto-close.");
+			"Your We Do Raids party is idle. Open the plugin and click \"Keep it open\" or it will auto-close.");
 		clientThread.invokeLater(() ->
 		{
 			if (client.getGameState() == GameState.LOGGED_IN)
 			{
 				client.addChatMessage(ChatMessageType.CONSOLE, "",
-					"<col=e57373>We Do Raids:</col> your hosted party is idle, click \"I'm here\" in the "
+					"<col=e57373>We Do Raids:</col> your hosted party is idle, click \"Keep it open\" in the "
 						+ "side panel within 60 seconds or it will auto-close.", null);
 			}
 		});

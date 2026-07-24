@@ -30,13 +30,19 @@ import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.function.BiConsumer;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.LongSupplier;
 
 public final class RecruitmentCoordinator
 {
+	/** Receives the visible feed plus how many calls the user's config filters removed. */
+	@FunctionalInterface
+	public interface EntriesPublisher
+	{
+		void publish(long generation, List<RecruitEntry> entries, int hiddenByFilters);
+	}
+
 	private final WeDoRaidsConfig config;
 	private final List<RecruitEntry> demoEntries;
 	private final Set<String> notifiedKeys;
@@ -46,12 +52,12 @@ public final class RecruitmentCoordinator
 	private final BooleanSupplier localVerified;
 	private final LongSupplier identityGeneration;
 	private final Consumer<RecruitEntry> notifyRecruit;
-	private final BiConsumer<Long, List<RecruitEntry>> entriesPublisher;
+	private final EntriesPublisher entriesPublisher;
 
 	public RecruitmentCoordinator(WeDoRaidsConfig config, List<RecruitEntry> demoEntries, Set<String> notifiedKeys,
 		Set<String> activeTobHosts, Set<String> activeToaHosts, BooleanSupplier localBanned,
 		BooleanSupplier localVerified, LongSupplier identityGeneration, Consumer<RecruitEntry> notifyRecruit,
-		BiConsumer<Long, List<RecruitEntry>> entriesPublisher)
+		EntriesPublisher entriesPublisher)
 	{
 		this.config = config;
 		this.demoEntries = demoEntries;
@@ -94,17 +100,50 @@ public final class RecruitmentCoordinator
 		activeTobHosts.addAll(projection.getTobHosts());
 		activeToaHosts.clear();
 		activeToaHosts.addAll(projection.getToaHosts());
-		entriesPublisher.accept(generation, projection.getEntries());
+		entriesPublisher.publish(generation, projection.getEntries(), countHiddenByFilters(entries));
 	}
 
 	private boolean passesFilters(RecruitEntry entry)
 	{
 		return !localBanned.getAsBoolean()
 			&& localVerified.getAsBoolean()
-			&& raidEnabled(entry.getRaidType())
-			&& matchesKeywordFilter(entry.getMessage())
 			&& kindEnabled(entry.getKind())
+			&& passesConfigFilters(entry);
+	}
+
+	private boolean passesConfigFilters(RecruitEntry entry)
+	{
+		return raidEnabled(entry.getRaidType())
+			&& matchesKeywordFilter(entry.getMessage())
 			&& matchesTierFilter(entry.getTier());
+	}
+
+	/** How many otherwise-visible calls the user's config filters (raid, tier, keyword) removed. */
+	private int countHiddenByFilters(List<RecruitEntry> rawEntries)
+	{
+		if (localBanned.getAsBoolean() || !localVerified.getAsBoolean())
+		{
+			return 0;
+		}
+		int hidden = countHidden(rawEntries);
+		if (config.demoData())
+		{
+			hidden += countHidden(demoEntries);
+		}
+		return hidden;
+	}
+
+	private int countHidden(List<RecruitEntry> entries)
+	{
+		int hidden = 0;
+		for (RecruitEntry entry : entries)
+		{
+			if (kindEnabled(entry.getKind()) && !passesConfigFilters(entry))
+			{
+				hidden++;
+			}
+		}
+		return hidden;
 	}
 
 	private boolean matchesTierFilter(String tier)

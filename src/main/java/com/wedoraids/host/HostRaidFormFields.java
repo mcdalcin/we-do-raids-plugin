@@ -67,6 +67,7 @@ final class HostRaidFormFields extends JPanel
 	private JPanel roleRow;
 	private JPanel scaleFcRow;
 	private JPanel layoutRow;
+	private final JLabel tierHint = new JLabel();
 
 	HostRaidFormFields(HostDependencies dependencies, Supplier<RaidType> selectedRaid,
 		BiConsumer<String, Boolean> status)
@@ -127,10 +128,42 @@ final class HostRaidFormFields extends JPanel
 		{
 			tier.addItem(raid.getTiers()[0]);
 		}
-		if (previous != null)
+		restoreTierSelection(previous);
+		refreshTierHint(raid, killCount);
+	}
+
+	/** Restores the previous tier only if it is still offered, so an ineligible tier never stays selected. */
+	private void restoreTierSelection(Object previous)
+	{
+		if (previous == null)
 		{
-			tier.setSelectedItem(previous);
+			return;
 		}
+		for (int i = 0; i < tier.getItemCount(); i++)
+		{
+			if (previous.equals(tier.getItemAt(i)))
+			{
+				tier.setSelectedIndex(i);
+				return;
+			}
+		}
+		if (tier.getItemCount() > 0)
+		{
+			tier.setSelectedIndex(0);
+		}
+	}
+
+	/** Explains missing tier options, shown only when the known KC actually hides some. */
+	private void refreshTierHint(RaidType raid, int killCount)
+	{
+		final boolean limited = killCount >= 0 && tier.getItemCount() < raid.getTiers().length;
+		tierHint.setVisible(limited);
+		if (limited)
+		{
+			tierHint.setText("Tiers limited by your " + raid.getDisplayName() + " KC: " + killCount);
+		}
+		revalidate();
+		repaint();
 	}
 
 	void refreshCoxLayout()
@@ -304,6 +337,11 @@ final class HostRaidFormFields extends JPanel
 	private void buildFields()
 	{
 		add(pair(labeled("Tier", tier), labeled("World", world)));
+		tierHint.setFont(FontManager.getRunescapeSmallFont());
+		tierHint.setForeground(WdrTheme.TEXT_DIM);
+		tierHint.setAlignmentX(Component.LEFT_ALIGNMENT);
+		tierHint.setVisible(false);
+		add(tierHint);
 		add(pair(labeled("Team size", team), labeled("Open spots", spots)));
 		scaleFcRow = pair(labeled("Scale (0-100)", scale), labeled("Friends chat", fc));
 		add(scaleFcRow);
@@ -318,11 +356,13 @@ final class HostRaidFormFields extends JPanel
 			checkbox.setFont(FontManager.getRunescapeSmallFont());
 			checkboxes.add(checkbox);
 		}
-		roleRow = labeled("Roles you need (looking for)", checkboxes);
+		roleRow = labeled("Roles needed", checkboxes);
 		add(roleRow);
-		add(labeled("Other roles you need", roles));
-		add(labeled("Party hub (optional)", partyHub));
-		add(labeled("Description (e.g. pogstack, max only)", description));
+		add(labeled("Other roles", roles));
+		partyHub.setToolTipText("Optional passphrase joiners use with the RuneLite Party plugin");
+		add(labeled("Party hub", partyHub));
+		description.setToolTipText("e.g. pogstack, max only");
+		add(labeled("Description", description));
 	}
 
 	private void refreshTeamOptions()

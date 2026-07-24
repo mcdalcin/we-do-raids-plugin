@@ -26,7 +26,6 @@ package com.wedoraids.host;
 
 import com.wedoraids.ui.WdrButton;
 import com.wedoraids.ui.WdrTheme;
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.util.function.BooleanSupplier;
@@ -51,7 +50,11 @@ final class HostInactivityGuard
 	private final Timer idleTimer;
 	private final Timer promptTimer;
 	private final JPanel banner = new JPanel();
-	private final JLabel countdown = new JLabel();
+	/**
+	 * Placeholder text matters: {@code fullWidth} caps a component's maximum height at its preferred
+	 * height, and an empty label prefers zero, which would pin the countdown closed for good.
+	 */
+	private final JLabel countdown = new JLabel(" ");
 	private int promptRemaining;
 	private boolean prompting;
 
@@ -127,26 +130,28 @@ final class HostInactivityGuard
 	private void buildBanner()
 	{
 		banner.setLayout(new BoxLayout(banner, BoxLayout.Y_AXIS));
-		banner.setBackground(new Color(46, 34, 18));
+		banner.setBackground(WdrTheme.CARD);
+		// The countdown ends by closing the host's post, so it uses the failure role rather than a
+		// fourth chrome hue; an amber warning would read as ToA in a panel full of raid colours.
 		banner.setBorder(BorderFactory.createCompoundBorder(
-			BorderFactory.createMatteBorder(2, 0, 0, 0, new Color(214, 170, 80)),
+			BorderFactory.createMatteBorder(0, 3, 0, 0, WdrTheme.ERROR),
 			BorderFactory.createEmptyBorder(8, 10, 10, 10)));
 		banner.setAlignmentX(Component.LEFT_ALIGNMENT);
 
 		JLabel question = new JLabel("Still hosting this raid?");
 		question.setFont(FontManager.getRunescapeSmallFont());
-		question.setForeground(new Color(240, 210, 150));
+		question.setForeground(WdrTheme.TEXT);
 		fullWidth(question);
 		banner.add(question);
 		banner.add(Box.createVerticalStrut(2));
 
 		countdown.setFont(FontManager.getRunescapeSmallFont());
-		countdown.setForeground(WdrTheme.TEXT_DIM);
+		countdown.setForeground(WdrTheme.ERROR);
 		fullWidth(countdown);
 		banner.add(countdown);
 		banner.add(Box.createVerticalStrut(7));
 
-		WdrButton here = new WdrButton("I'm here, keep it open", WdrButton.Variant.PRIMARY);
+		WdrButton here = new WdrButton("Keep it open", WdrButton.Variant.PRIMARY);
 		here.addActionListener(e -> reset());
 		fullWidth(here);
 		banner.add(here);

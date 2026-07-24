@@ -24,7 +24,10 @@
  */
 package com.wedoraids.feed;
 
+import java.time.Instant;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
@@ -68,4 +71,36 @@ public class RecruitDisplayTest
 		assertEquals("T1", RecruitDisplay.wdrTierNumber(RaidType.TOB, 1));
 	}
 
+	@Test
+	public void messageIsRedundant_whenMessageOnlyRestatesTheParsedFields()
+	{
+		assertTrue(RecruitDisplay.messageIsRedundant(
+			entry("trio w447 mdps/rdps +2 phub olm", "+2", "mdps, rdps", "trio", 447, "olm")));
+	}
+
+	@Test
+	public void messageIsRedundant_whenMessageIsTheWorldAndSpotsRunTogether()
+	{
+		assertTrue(RecruitDisplay.messageIsRedundant(entry("507+1 range", "+1", "range", null, 507, null)));
+	}
+
+	@Test
+	public void messageIsNotRedundant_whenMessageAddsAnythingNew()
+	{
+		assertFalse(RecruitDisplay.messageIsRedundant(
+			entry("trio w447 mdps/rdps pogstack", "+2", "mdps, rdps", "trio", 447, null)));
+	}
+
+	@Test
+	public void messageIsRedundant_whenMessageIsMissing()
+	{
+		assertTrue(RecruitDisplay.messageIsRedundant(null));
+	}
+
+	private static RecruitEntry entry(String message, String spots, String roles, String partySize,
+		int world, String host)
+	{
+		return new RecruitEntry("Sender", "WDR", RaidType.TOB, "Standard", null, spots, roles,
+			partySize, world, null, host, 0, "RAID", message, Instant.now());
+	}
 }

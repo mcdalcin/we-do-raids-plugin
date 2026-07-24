@@ -28,7 +28,6 @@ import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import javax.swing.BorderFactory;
@@ -36,10 +35,9 @@ import javax.swing.JButton;
 import net.runelite.client.ui.FontManager;
 
 /**
- * A rounded, hover-aware pill button in the WDR palette. Three variants:
- * PRIMARY (filled green, a positive action), GHOST (outlined, a soft action) and
- * DANGER (red, a destructive action). Painted by hand so it looks nothing like the
- * default Swing button.
+ * A flat rectangular button in the WDR palette, matching the client's utilitarian look.
+ * Three variants: PRIMARY (filled green, the one main action of a view), GHOST (plain,
+ * a soft action) and DANGER (muted red, a destructive action).
  */
 public class WdrButton extends JButton
 {
@@ -62,7 +60,7 @@ public class WdrButton extends JButton
 		setOpaque(false);
 		setForeground(textColor());
 		setCursor(new Cursor(Cursor.HAND_CURSOR));
-		setBorder(BorderFactory.createEmptyBorder(6, 14, 6, 14));
+		setBorder(BorderFactory.createEmptyBorder(4, 10, 4, 10));
 		addMouseListener(new MouseAdapter()
 		{
 			@Override
@@ -88,9 +86,9 @@ public class WdrButton extends JButton
 		switch (variant)
 		{
 			case PRIMARY:
-				return WdrTheme.BACKGROUND; // dark text on a bright green pill
+				return WdrTheme.ACCENT_INK; // dark ink on the bright accent fill
 			case DANGER:
-				return hover ? new Color(255, 225, 225) : new Color(240, 180, 180);
+				return WdrTheme.ERROR;
 			case GHOST:
 			default:
 				return hover ? Color.WHITE : WdrTheme.TEXT;
@@ -103,14 +101,12 @@ public class WdrButton extends JButton
 		switch (variant)
 		{
 			case PRIMARY:
-				return pressed ? WdrTheme.GREEN_DIM : (hover ? WdrTheme.GREEN_BRIGHT : WdrTheme.GREEN);
+				return pressed ? WdrTheme.TEXT_DIM : (hover ? Color.WHITE : WdrTheme.ACCENT);
 			case DANGER:
-				return pressed ? new Color(120, 44, 44)
-					: (hover ? new Color(112, 44, 44) : new Color(70, 32, 32));
+				return pressed ? WdrTheme.BORDER : (hover ? WdrTheme.ERROR_FILL : WdrTheme.FIELD);
 			case GHOST:
 			default:
-				return pressed ? WdrTheme.BORDER
-					: (hover ? WdrTheme.HOVER : WdrTheme.FIELD);
+				return pressed ? WdrTheme.BORDER : (hover ? WdrTheme.HOVER : WdrTheme.FIELD);
 		}
 	}
 
@@ -121,7 +117,7 @@ public class WdrButton extends JButton
 			case PRIMARY:
 				return null;
 			case DANGER:
-				return new Color(150, 70, 70);
+				return WdrTheme.ERROR_FILL;
 			case GHOST:
 			default:
 				return WdrTheme.BORDER;
@@ -132,18 +128,16 @@ public class WdrButton extends JButton
 	protected void paintComponent(Graphics g)
 	{
 		final Graphics2D g2 = (Graphics2D) g.create();
-		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		final int w = getWidth();
 		final int h = getHeight();
-		final int arc = h; // fully rounded pill ends
 
 		g2.setColor(fillColor());
-		g2.fillRoundRect(0, 0, w, h, arc, arc);
+		g2.fillRect(0, 0, w, h);
 		final Color outline = outlineColor();
 		if (outline != null)
 		{
 			g2.setColor(outline);
-			g2.drawRoundRect(0, 0, w - 1, h - 1, arc, arc);
+			g2.drawRect(0, 0, w - 1, h - 1);
 		}
 		g2.dispose();
 		super.paintComponent(g);

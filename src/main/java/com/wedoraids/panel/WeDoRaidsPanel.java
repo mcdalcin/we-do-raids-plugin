@@ -33,11 +33,13 @@ import com.wedoraids.ui.WdrTheme;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Rectangle;
 import java.util.List;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JPanel;
+import javax.swing.Scrollable;
 import net.runelite.client.ui.PluginPanel;
 
 public class WeDoRaidsPanel extends PluginPanel
@@ -54,46 +56,82 @@ public class WeDoRaidsPanel extends PluginPanel
 		super(false);
 		header = new RecruitPanelHeader(config, panelDependencies.onRefresh());
 		filterBar = new RecruitFilterBar(config, panelDependencies.saveFilter(), this::rebuildRecruitList);
-		recruitList = new RecruitListPanel(filterBar, panelDependencies.onHopWorld(),
-			panelDependencies.onJoinHub(), header::setEntryCount, header.logo());
+		recruitList = new RecruitListPanel(config, filterBar, panelDependencies.saveFilter(),
+			panelDependencies.onHopWorld(), panelDependencies.onJoinHub(), header::setEntryCount);
 
 		setLayout(new BorderLayout(0, 8));
 		setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 		setBackground(WdrTheme.BACKGROUND);
 
-		JPanel top = new JPanel();
-		top.setLayout(new BoxLayout(top, BoxLayout.Y_AXIS));
-		top.setOpaque(false);
-		top.add(header);
-		top.add(Box.createVerticalStrut(6));
+		// Only the title row and the status bar are fixed chrome. Everything else scrolls together:
+		// an expanded host form is taller than a fixed-mode sidebar (~500px), so pinning it above the
+		// feed starved the feed to zero height and pushed the raid counts into the status bar.
+		hostForm = new HostFormPanel(hostDependencies);
+		hostForm.setAlignmentX(Component.LEFT_ALIGNMENT);
 
 		JPanel demoBanner = header.demoBanner();
 		demoBanner.setAlignmentX(Component.LEFT_ALIGNMENT);
-		top.add(demoBanner);
 		header.refreshDemoBanner();
 
-		hostForm = new HostFormPanel(hostDependencies);
-		hostForm.setAlignmentX(Component.LEFT_ALIGNMENT);
-		top.add(hostForm);
-		top.add(Box.createVerticalStrut(6));
-
-		top.add(divider());
-		top.add(Box.createVerticalStrut(6));
-		top.add(filterBar);
+		JPanel content = new ScrollingContent();
+		content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
+		content.setOpaque(false);
+		content.add(demoBanner);
+		content.add(hostForm);
+		content.add(Box.createVerticalStrut(6));
+		content.add(divider());
+		content.add(Box.createVerticalStrut(6));
+		content.add(filterBar);
 		filterBar.restoreSelection();
-		top.add(Box.createVerticalStrut(4));
-		top.add(recruitList.countLabel());
-		top.add(Box.createVerticalStrut(6));
+		content.add(Box.createVerticalStrut(4));
+		content.add(recruitList.countLabel());
+		content.add(Box.createVerticalStrut(6));
+		content.add(recruitList);
 
-		add(top, BorderLayout.NORTH);
-		add(recruitList.scrollPane(), BorderLayout.CENTER);
+		add(header, BorderLayout.NORTH);
+		add(recruitList.scrollPane(content), BorderLayout.CENTER);
 		add(header.statusBar(), BorderLayout.SOUTH);
 		recruitList.rebuild();
+	}
+
+	/** Fills the viewport's width so card width never depends on card content. */
+	private static final class ScrollingContent extends JPanel implements Scrollable
+	{
+		@Override
+		public Dimension getPreferredScrollableViewportSize()
+		{
+			return getPreferredSize();
+		}
+
+		@Override
+		public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction)
+		{
+			return 16;
+		}
+
+		@Override
+		public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction)
+		{
+			return visibleRect.height;
+		}
+
+		@Override
+		public boolean getScrollableTracksViewportWidth()
+		{
+			return true;
+		}
+
+		@Override
+		public boolean getScrollableTracksViewportHeight()
+		{
+			return false;
+		}
 	}
 
 	public void setBridgeStatus(BridgeStatus status)
 	{
 		header.setBridgeStatus(status);
+		recruitList.setBridgeStatus(status);
 	}
 
 	public void setBanned(boolean banned)
@@ -144,8 +182,13 @@ public class WeDoRaidsPanel extends PluginPanel
 
 	public void setEntries(List<RecruitEntry> newEntries)
 	{
+		setEntries(newEntries, 0);
+	}
+
+	public void setEntries(List<RecruitEntry> newEntries, int hiddenByFilters)
+	{
 		header.refreshDemoBanner();
-		recruitList.setEntries(newEntries);
+		recruitList.setEntries(newEntries, hiddenByFilters);
 	}
 
 	public void clear()
@@ -162,6 +205,7 @@ public class WeDoRaidsPanel extends PluginPanel
 	{
 		JPanel line = new JPanel();
 		line.setBackground(WdrTheme.BORDER);
+		line.setPreferredSize(new Dimension(0, 1));
 		line.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
 		line.setAlignmentX(Component.LEFT_ALIGNMENT);
 		return line;

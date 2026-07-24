@@ -25,15 +25,15 @@
 package com.wedoraids.host;
 
 import com.wedoraids.feed.RaidType;
-import com.wedoraids.ui.HtmlEscape;
+import com.wedoraids.ui.WdrButton;
 import com.wedoraids.ui.WdrTheme;
+import com.wedoraids.ui.WrappedText;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.util.Map;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
-import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -46,8 +46,8 @@ final class HostRaidForm extends JPanel
 	private final RaidTabButton[] raidTabs = new RaidTabButton[3];
 	private final HostRaidFormFields fields;
 	private final JPanel details = new JPanel();
-	private final JButton postButton = new JButton("Post to Discord");
-	private final JButton cancelEditButton = new JButton("Cancel edit");
+	private final WdrButton postButton = new WdrButton("Post to Discord", WdrButton.Variant.PRIMARY);
+	private final WdrButton cancelEditButton = new WdrButton("Cancel edit", WdrButton.Variant.GHOST);
 	private final JLabel status = new JLabel(" ");
 	private boolean raidChosen;
 
@@ -134,7 +134,7 @@ final class HostRaidForm extends JPanel
 
 	void setStatus(String message, boolean error)
 	{
-		status.setText("<html><body style='width:180px'>" + HtmlEscape.escape(message) + "</body></html>");
+		status.setText(WrappedText.html(message, WrappedText.PANEL));
 		status.setForeground(error ? WdrTheme.ERROR : WdrTheme.TEXT_DIM);
 	}
 
@@ -163,19 +163,25 @@ final class HostRaidForm extends JPanel
 
 	private void buildActions(Runnable submit, Runnable cancelEdit)
 	{
-		WdrTheme.styleButton(postButton);
+		// The one primary action of this view, so it carries the accent; cancel stays a soft action.
 		postButton.addActionListener(e -> submit.run());
-		postButton.setAlignmentX(Component.LEFT_ALIGNMENT);
+		fullWidth(postButton);
 		details.add(postButton);
-		WdrTheme.styleButton(cancelEditButton);
 		cancelEditButton.addActionListener(e -> cancelEdit.run());
-		cancelEditButton.setAlignmentX(Component.LEFT_ALIGNMENT);
+		fullWidth(cancelEditButton);
 		cancelEditButton.setVisible(false);
+		details.add(Box.createVerticalStrut(4));
 		details.add(cancelEditButton);
 		status.setFont(FontManager.getRunescapeSmallFont());
 		status.setForeground(WdrTheme.TEXT_DIM);
 		status.setAlignmentX(Component.LEFT_ALIGNMENT);
 		details.add(status);
+	}
+
+	private static void fullWidth(javax.swing.JComponent component)
+	{
+		component.setAlignmentX(Component.LEFT_ALIGNMENT);
+		component.setMaximumSize(new Dimension(Integer.MAX_VALUE, component.getPreferredSize().height));
 	}
 
 	private RaidType selectedRaid()

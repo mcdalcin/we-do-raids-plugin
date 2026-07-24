@@ -34,7 +34,6 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.image.BufferedImage;
 import javax.swing.BorderFactory;
-import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -59,7 +58,7 @@ final class RecruitPanelHeader extends JPanel
 		setBackground(WdrTheme.CARD);
 		setAlignmentX(Component.LEFT_ALIGNMENT);
 		setBorder(BorderFactory.createCompoundBorder(
-			BorderFactory.createMatteBorder(0, 0, 2, 0, WdrTheme.GREEN),
+			BorderFactory.createMatteBorder(0, 0, 1, 0, WdrTheme.BORDER),
 			BorderFactory.createEmptyBorder(6, 8, 6, 6)));
 
 		JLabel title = new JLabel("We Do Raids");
@@ -81,13 +80,7 @@ final class RecruitPanelHeader extends JPanel
 		titleRow.setAlignmentX(Component.LEFT_ALIGNMENT);
 		titleRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, titleRow.getPreferredSize().height));
 
-		JLabel subtitle = new JLabel("Raid recruitment finder");
-		subtitle.setForeground(WdrTheme.TEXT_DIM);
-		subtitle.setFont(FontManager.getRunescapeSmallFont());
-		subtitle.setAlignmentX(Component.LEFT_ALIGNMENT);
 		add(titleRow);
-		add(Box.createVerticalStrut(2));
-		add(subtitle);
 	}
 
 	JPanel demoBanner()
@@ -128,14 +121,9 @@ final class RecruitPanelHeader extends JPanel
 			: new Dimension(0, 0));
 	}
 
-	BufferedImage logo()
-	{
-		return logo;
-	}
-
 	private void updateStatusBar()
 	{
-		String text = "● " + bridgeStatus.getLabel();
+		String text = bridgeStatus.getLabel();
 		if (bridgeStatus == BridgeStatus.ONLINE)
 		{
 			text += " · " + entryCount + " open";
@@ -147,11 +135,9 @@ final class RecruitPanelHeader extends JPanel
 	private static JPanel buildDemoBanner()
 	{
 		final JPanel banner = new JPanel(new BorderLayout());
-		banner.setBackground(WdrTheme.CARD);
-		banner.setBorder(BorderFactory.createCompoundBorder(
-			BorderFactory.createLineBorder(WdrTheme.ERROR),
-			BorderFactory.createEmptyBorder(5, 8, 5, 8)));
-		final JLabel label = new JLabel("DEMO MODE: sample calls, not live");
+		banner.setOpaque(false);
+		banner.setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));
+		final JLabel label = new JLabel("Demo data, not live");
 		label.setForeground(WdrTheme.ERROR);
 		label.setFont(FontManager.getRunescapeSmallFont());
 		banner.add(label, BorderLayout.CENTER);

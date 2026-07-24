@@ -115,4 +115,81 @@ public final class RecruitDisplay
 		}
 		return value;
 	}
+
+	/**
+	 * True when the raw message says nothing the card does not already show in its own fields.
+	 *
+	 * <p>Bridge messages routinely restate the parsed data ("trio w447 mdps/rdps +2 phub olm" beside
+	 * a card already showing the world, fill and roles). Rendering both costs two or three lines of a
+	 * 225px column per call. Every structured value is removed from a copy of the message; if what
+	 * remains carries no word or number, the message is redundant and the caller can drop it. The
+	 * original text is never altered for display, so nothing is mangled when it does add something.
+	 */
+	public static boolean messageIsRedundant(RecruitEntry entry)
+	{
+		if (entry == null || entry.getMessage() == null)
+		{
+			return true;
+		}
+		String residual = entry.getMessage().toLowerCase();
+		for (String known : knownTokens(entry))
+		{
+			if (known != null && !known.isEmpty())
+			{
+				residual = residual.replace(known, " ");
+			}
+		}
+		for (int i = 0; i < residual.length(); i++)
+		{
+			if (Character.isLetterOrDigit(residual.charAt(i)))
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/** Lowercase fragments the card already renders, longest first so "mdps" cannot eat "dps". */
+	private static java.util.List<String> knownTokens(RecruitEntry entry)
+	{
+		final java.util.List<String> tokens = new java.util.ArrayList<>();
+		addToken(tokens, entry.getTier());
+		addToken(tokens, entry.getMode());
+		addToken(tokens, entry.getSpots());
+		addToken(tokens, entry.getPartySize());
+		addToken(tokens, entry.getRegion());
+		addToken(tokens, entry.getHost());
+		addToken(tokens, entry.getRaidType() == RaidType.OTHER ? null : entry.getRaidType().getDisplayName());
+		if (entry.getRoles() != null)
+		{
+			for (String role : entry.getRoles().split("[,/]"))
+			{
+				addToken(tokens, role);
+			}
+		}
+		if (entry.getWorld() != 0)
+		{
+			final String world = Integer.toString(entry.getWorld());
+			addToken(tokens, "w" + world);
+			addToken(tokens, world);
+		}
+		// Party-hub wording the bridge emits alongside the hub name itself.
+		tokens.add("phub");
+		tokens.add("ph");
+		tokens.sort((a, b) -> Integer.compare(b.length(), a.length()));
+		return tokens;
+	}
+
+	private static void addToken(java.util.List<String> tokens, String value)
+	{
+		if (value == null)
+		{
+			return;
+		}
+		final String trimmed = value.trim().toLowerCase();
+		if (!trimmed.isEmpty())
+		{
+			tokens.add(trimmed);
+		}
+	}
 }

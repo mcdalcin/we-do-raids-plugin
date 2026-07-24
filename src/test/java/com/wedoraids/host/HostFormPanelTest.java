@@ -33,6 +33,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import javax.swing.AbstractButton;
 import javax.swing.JLabel;
 import javax.swing.SwingUtilities;
 import org.junit.BeforeClass;
@@ -121,6 +122,56 @@ public class HostFormPanelTest
 		assertEquals(before, liveStatus.getText());
 	}
 
+	@Test
+	public void reachingZeroSpotsUpdatesInsteadOfClosing() throws Exception
+	{
+		final HostFormPanel[] panel = new HostFormPanel[1];
+		final FakeActions actions = new FakeActions();
+		onEdt(() ->
+		{
+			panel[0] = newPanel(actions);
+			enterLive(panel[0], "+1", "mdps");
+			invoke(panel[0], "fillRole", "mdps");
+		});
+
+		assertEquals(1, actions.updateCalls.get());
+		assertEquals(0, actions.closeCalls.get());
+		actions.completeUpdate("Updated");
+		assertEquals(0, actions.closeCalls.get());
+		onEdt(() ->
+		{
+			final Map<String, String> displayedLiveFields = field(panel[0], "displayedLiveFields");
+			assertEquals("+0", displayedLiveFields.get("spots"));
+		});
+	}
+
+	@Test
+	public void undoRevertsLastConfirmedUpdate() throws Exception
+	{
+		final HostFormPanel[] panel = new HostFormPanel[1];
+		final FakeActions actions = new FakeActions();
+		onEdt(() ->
+		{
+			panel[0] = newPanel(actions);
+			enterLive(panel[0], "+2", "mdps");
+			invoke(panel[0], "decrementSpot");
+		});
+		actions.completeUpdate("Updated");
+
+		// Click the real control rather than reaching into the panel, so the test covers the
+		// button the host actually presses.
+		onEdt(() -> clickButton(panel[0], "Undo last change"));
+		assertEquals(2, actions.updateCalls.get());
+		assertEquals("+2", actions.lastUpdateFields.get("spots"));
+		actions.completeUpdate("Updated");
+		onEdt(() ->
+		{
+			final Map<String, String> displayedLiveFields = field(panel[0], "displayedLiveFields");
+			assertEquals("+2", displayedLiveFields.get("spots"));
+			assertEquals("mdps", displayedLiveFields.get("roles"));
+		});
+	}
+
 	private static HostFormPanel newPanel(FakeActions actions)
 	{
 		return new HostFormPanel(new HostDependencies(actions, () -> 0, () -> "", () -> "tester", raid -> -1,
@@ -140,6 +191,37 @@ public class HostFormPanelTest
 		fields.put("roles", roles);
 		setField(panel, "lastSubmittedFields", fields);
 		panel.enterLivePost("message-id");
+	}
+
+	/** Finds a button by its label anywhere in the panel and presses it. */
+	private static void clickButton(java.awt.Container root, String text)
+	{
+		final AbstractButton button = findButton(root, text);
+		if (button == null)
+		{
+			throw new AssertionError("No button labelled " + text);
+		}
+		button.doClick();
+	}
+
+	private static AbstractButton findButton(java.awt.Container root, String text)
+	{
+		for (java.awt.Component child : root.getComponents())
+		{
+			if (child instanceof AbstractButton && text.equals(((AbstractButton) child).getText()))
+			{
+				return (AbstractButton) child;
+			}
+			if (child instanceof java.awt.Container)
+			{
+				final AbstractButton found = findButton((java.awt.Container) child, text);
+				if (found != null)
+				{
+					return found;
+				}
+			}
+		}
+		return null;
 	}
 
 	private static void onEdt(ThrowingRunnable action) throws Exception
@@ -209,6 +291,7 @@ public class HostFormPanelTest
 		private final AtomicInteger updateCalls = new AtomicInteger();
 		private final AtomicInteger closeCalls = new AtomicInteger();
 		private Consumer<String> pendingUpdate;
+		private Map<String, String> lastUpdateFields;
 
 		@Override
 		public void submit(Map<String, String> fields, Consumer<String> status)
@@ -220,6 +303,7 @@ public class HostFormPanelTest
 		public void update(Map<String, String> fields, Consumer<String> status)
 		{
 			updateCalls.incrementAndGet();
+			lastUpdateFields = fields;
 			pendingUpdate = status;
 		}
 

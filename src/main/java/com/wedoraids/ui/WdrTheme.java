@@ -33,23 +33,47 @@ import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 
 /**
- * We Do Raids palette. Structure (backgrounds, borders, text) uses RuneLite's native
- * {@link ColorScheme} so the panel blends in with the rest of the client; a muted WDR
- * green is kept as the accent for brand identity.
+ * We Do Raids palette, built as roles rather than swatches. One role, one meaning.
+ *
+ * <p>Surfaces and borders come from RuneLite's native {@link ColorScheme} so the panel sits in
+ * the client rather than on top of it. Saturated colour is reserved almost entirely for raid
+ * identity: the three raid hues are the panel's data dimension and are the only chroma a user
+ * sees in a normal feed. Chrome (actions, links, status) is deliberately neutral so it never
+ * competes with, or is mistaken for, raid data. Failure states are the one exception.
+ *
+ * <p>Raid hues live on {@link com.wedoraids.feed.RaidType}; they are equalised in perceptual
+ * lightness (OKLCH L=0.76) so no raid outranks another by colour weight alone.
  */
 public final class WdrTheme
 {
+	/** Panel canvas. */
 	public static final Color BACKGROUND = ColorScheme.DARK_GRAY_COLOR;
+	/** Recessed surface for cards and notices, one step below the canvas. */
 	public static final Color CARD = ColorScheme.DARKER_GRAY_COLOR;
 	public static final Color FIELD = ColorScheme.DARKER_GRAY_COLOR;
 	public static final Color HOVER = ColorScheme.DARK_GRAY_HOVER_COLOR;
-	public static final Color GREEN = new Color(86, 171, 106);
-	public static final Color GREEN_BRIGHT = new Color(126, 201, 145);
-	static final Color GREEN_DIM = new Color(48, 84, 58);
 	public static final Color BORDER = ColorScheme.MEDIUM_GRAY_COLOR;
-	public static final Color TEXT = new Color(220, 220, 220);
-	public static final Color TEXT_DIM = ColorScheme.LIGHT_GRAY_COLOR;
-	public static final Color ERROR = ColorScheme.PROGRESS_ERROR_COLOR;
+
+	/** Primary ink. */
+	public static final Color TEXT = new Color(226, 226, 226);
+	/** Secondary ink: supporting detail that still has to be readable at a glance. */
+	public static final Color TEXT_DIM = new Color(158, 158, 158);
+	/** Tertiary ink: metadata (timestamps, sources). Still clears AA on both surfaces. */
+	public static final Color TEXT_MUTED = new Color(146, 146, 146);
+
+	/**
+	 * The single non-data accent. Neutral by design: a chromatic accent would either collide
+	 * with a raid hue or add a fourth colour to a 225px column. Reserved for the one primary
+	 * action in a view, never for decoration.
+	 */
+	public static final Color ACCENT = new Color(232, 232, 232);
+	/** Ink on {@link #ACCENT}. */
+	public static final Color ACCENT_INK = new Color(24, 24, 24);
+
+	/** Failure and destructive intent. The only place chroma appears outside raid identity. */
+	public static final Color ERROR = new Color(232, 92, 92);
+	/** Muted fill for destructive controls. */
+	public static final Color ERROR_FILL = new Color(72, 34, 34);
 
 	private WdrTheme()
 	{
@@ -71,7 +95,7 @@ public final class WdrTheme
 	{
 		f.setBackground(FIELD);
 		f.setForeground(TEXT);
-		f.setCaretColor(GREEN_BRIGHT);
+		f.setCaretColor(TEXT);
 		f.setBorder(BorderFactory.createCompoundBorder(
 			BorderFactory.createLineBorder(BORDER),
 			BorderFactory.createEmptyBorder(2, 4, 2, 4)));

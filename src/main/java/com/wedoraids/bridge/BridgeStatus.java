@@ -29,13 +29,17 @@ import java.awt.Color;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * Feed connection state. Only failure carries colour: a healthy feed is the expected case and
+ * says so in words, so the panel never spends attention on "everything is fine".
+ */
 @Getter
 @RequiredArgsConstructor
 public enum BridgeStatus
 {
-	OFF("Feed off", WdrTheme.TEXT_DIM),
-	CONNECTING("Connecting…", WdrTheme.TEXT_DIM),
-	ONLINE("Live", WdrTheme.GREEN),
+	OFF("Feed off", WdrTheme.TEXT_MUTED),
+	CONNECTING("Connecting…", WdrTheme.TEXT_MUTED),
+	ONLINE("Live", WdrTheme.TEXT_DIM),
 	OFFLINE("Offline", WdrTheme.ERROR);
 
 	private final String label;

@@ -46,7 +46,7 @@ public class HostFormPanel extends JPanel
 	}
 
 	private final HostActions actions;
-	private final JButton toggle = new JButton("＋ Host a raid");
+	private final JButton toggle = new JButton("Host raid");
 	private final HostRaidForm raidForm;
 	private final HostLivePostPanel livePostPanel;
 	private final HostInactivityGuard inactivityGuard;
@@ -130,7 +130,7 @@ public class HostFormPanel extends JPanel
 	private void setExpanded(boolean expanded)
 	{
 		this.expanded = expanded;
-		toggle.setText((expanded ? "－" : "＋") + " Host a raid");
+		toggle.setText(expanded ? "Hide host form" : "Host raid");
 		raidForm.setVisible(expanded && (displayedLiveFields == null || editingLive));
 		livePostPanel.setVisible(expanded && displayedLiveFields != null && !editingLive);
 		if (expanded)
