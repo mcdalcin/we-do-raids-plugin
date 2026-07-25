@@ -80,7 +80,7 @@ public class WeDoRaidsPlugin extends Plugin
 	/** Default We Do Raids bridge; overridable via the advanced config for testing. */
 	private static final String DEFAULT_BRIDGE_URL = "https://wdr.timecapsule.ink/recruits";
 	/** Fixed feed refresh interval (seconds). Locked, not user-configurable. */
-	private static final int POLL_SECONDS = 10;
+	private static final int POLL_SECONDS = 5;
 
 	@Inject
 	private WeDoRaidsConfig config;

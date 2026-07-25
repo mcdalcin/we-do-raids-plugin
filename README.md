@@ -4,7 +4,7 @@ The official RuneLite plugin for the [We Do Raids](https://discord.gg/wdr) Disco
 
 ## What it does
 
-- Shows the raid calls posted in the WDR Discord LFR channels in a side panel, updated about every 10 seconds. Each call lists the raid, tier, world, open spots, party size, roles, region and host.
+- Shows the raid calls posted in the WDR Discord LFR channels in a side panel, updated about every 5 seconds. Each call lists the raid, tier, world, open spots, party size, roles, region and host.
 - Click a call's world to hop straight to it.
 - Highlights WDR teams that are currently recruiting on the in-game Theatre of Blood and Tombs of Amascut party boards.
 - Lets you host your own call: post a recruitment into the correct WDR channel (CoX layouts are auto-scouted), tick roles as they fill, and close it when you're done. The Discord post keeps itself up to date.
