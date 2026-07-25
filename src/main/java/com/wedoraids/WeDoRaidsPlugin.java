@@ -80,7 +80,7 @@ public class WeDoRaidsPlugin extends Plugin
 	/** Default We Do Raids bridge; overridable via the advanced config for testing. */
 	private static final String DEFAULT_BRIDGE_URL = "https://wdr.timecapsule.ink/recruits";
 	/** Fixed feed refresh interval (seconds). Locked, not user-configurable. */
-	private static final int POLL_SECONDS = 10;
+	private static final int POLL_SECONDS = 5;
 
 	@Inject
 	private WeDoRaidsConfig config;
@@ -145,6 +145,9 @@ public class WeDoRaidsPlugin extends Plugin
 	 * different account logs in, so one account never inherits another's post.
 	 */
 	private volatile String hostLiveOwner;
+	/** Lower-cased party members already ban-checked this hosting session. */
+	private final java.util.Set<String> checkedPartyMembers =
+		java.util.concurrent.ConcurrentHashMap.newKeySet();
 	/** The world the player is currently on, or 0 when logged out. */
 	private volatile int currentWorld;
 	/** Latest scouted CoX layout (non-CM only; the raids plugin never scouts CM). */
@@ -669,6 +672,55 @@ public class WeDoRaidsPlugin extends Plugin
 		}
 		currentWorld = client.getWorld();
 		worldHopController().onGameTick();
+		scanPartyForBannedJoiners();
+	}
+
+	/**
+	 * While a hosted post is live, check each player who joins the RuneLite party against
+	 * the WDR ban list and warn the host. Polled per tick rather than event-driven because
+	 * a joiner's display name arrives some time after the join itself; the checked-names
+	 * set keeps every member to a single bridge query per hosting session.
+	 */
+	private void scanPartyForBannedJoiners()
+	{
+		if (hostLiveOwner == null || !partyService.isInParty())
+		{
+			if (!checkedPartyMembers.isEmpty())
+			{
+				checkedPartyMembers.clear();
+			}
+			return;
+		}
+		final String self = localPlayerName;
+		for (net.runelite.client.party.PartyMember member : partyService.getMembers())
+		{
+			final String name = member.getDisplayName();
+			if (name == null || name.isEmpty() || "<unknown>".equals(name)
+				|| (self != null && self.equalsIgnoreCase(name)))
+			{
+				continue;
+			}
+			if (checkedPartyMembers.add(name.toLowerCase(java.util.Locale.ROOT)))
+			{
+				bridgeClient().checkBanned(name, this::warnBannedJoiner);
+			}
+		}
+	}
+
+	/** EDT callback from the ban check; raises the in-game and desktop warnings. */
+	private void warnBannedJoiner(String name)
+	{
+		clientThread.invokeLater(() ->
+		{
+			if (client.getGameState() == GameState.LOGGED_IN)
+			{
+				client.addChatMessage(net.runelite.api.ChatMessageType.CONSOLE, "",
+					"<col=e57373>We Do Raids:</col> " + name
+						+ " joined your party but is on the WDR ban list.", null);
+			}
+		});
+		notifier.notify(config.bannedJoinNotify(),
+			"We Do Raids: " + name + " is on the WDR ban list.");
 	}
 
 	@Subscribe

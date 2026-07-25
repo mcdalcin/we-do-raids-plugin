@@ -4,7 +4,7 @@ The official RuneLite plugin for the [We Do Raids](https://discord.gg/wdr) Disco
 
 ## What it does
 
-- Shows the raid calls posted in the WDR Discord LFR channels in a side panel, updated about every 10 seconds. Each call lists the raid, tier, world, open spots, party size, roles, region and host.
+- Shows the raid calls posted in the WDR Discord LFR channels in a side panel, updated about every 5 seconds. Each call lists the raid, tier, world, open spots, party size, roles, region and host.
 - Click a call's world to hop straight to it.
 - Highlights WDR teams that are currently recruiting on the in-game Theatre of Blood and Tombs of Amascut party boards.
 - Lets you host your own call: post a recruitment into the correct WDR channel (CoX layouts are auto-scouted), tick roles as they fill, and close it when you're done. The Discord post keeps itself up to date.
@@ -23,6 +23,7 @@ The plugin talks to the We Do Raids bridge (`wdr.timecapsule.ink`), the communit
 - Nothing is sent until you enter a verification key. Demo mode is fully local and makes no bridge requests.
 - When fetching the live feed, the plugin sends your logged-in RuneScape name and verification key so the bridge can verify you and enforce the WDR ban list.
 - When you post, update or close a raid, the bridge also receives the values you entered in the hosting form (raid, tier, world, party size, spots, roles, scale, fc, layout, party hub and description), the message id of an existing post, and your in-game name.
+- While you are hosting, the names of players who join your RuneLite party are checked against the WDR ban list, which sends each joiner's name to the bridge once. This powers the banned-joiner warning and can be turned off by leaving the party or closing your post.
 - Your key is stored as a secret RuneLite configuration value. The plugin also remembers your last raid and tier filter selections; it does not persist recruitment or host-post data.
 
 ## Affiliation

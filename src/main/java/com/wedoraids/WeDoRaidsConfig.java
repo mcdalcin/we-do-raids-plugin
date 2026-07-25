@@ -167,6 +167,18 @@ public interface WeDoRaidsConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "bannedJoinNotify",
+		name = "Banned joiner alert",
+		description = "Notify when a player on the WDR ban list joins your RuneLite party while you are hosting. "
+			+ "A warning always appears in the chat box; this controls the desktop notification.",
+		position = 6
+	)
+	default Notification bannedJoinNotify()
+	{
+		return Notification.ON;
+	}
+
+	@ConfigItem(
 		keyName = "remoteFeedKey",
 		name = "Verification key",
 		description = "Your personal key from the We Do Raids Discord. Type the verify command there to get it. "
