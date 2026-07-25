@@ -52,7 +52,11 @@ public class HostFormPanelTest
 	{
 		final HostFormPanel[] panel = new HostFormPanel[1];
 		final FakeActions actions = new FakeActions();
-		onEdt(() -> panel[0] = newPanel(actions));
+		onEdt(() ->
+		{
+			panel[0] = newPanel(actions);
+			seedValidDraft(panel[0]);
+		});
 
 		onEdt(() ->
 		{
@@ -191,6 +195,16 @@ public class HostFormPanelTest
 		fields.put("roles", roles);
 		setField(panel, "lastSubmittedFields", fields);
 		panel.enterLivePost("message-id");
+	}
+
+	/** Post is gated on an explicit tier and spot count, so seed both before exercising submit. */
+	private static void seedValidDraft(HostFormPanel panel)
+	{
+		final Object raidForm = field(panel, "raidForm");
+		final Object fields = field(raidForm, "fields");
+		final Object card = field(fields, "card");
+		invoke(card, "selectTier", "Standard");
+		invoke(card, "selectSpots", "+2");
 	}
 
 	/** Finds a button by its label anywhere in the panel and presses it. */

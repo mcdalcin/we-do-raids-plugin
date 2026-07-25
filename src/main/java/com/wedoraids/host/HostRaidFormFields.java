@@ -25,206 +25,179 @@
 package com.wedoraids.host;
 
 import com.wedoraids.feed.RaidType;
-import com.wedoraids.ui.WdrTheme;
-import java.awt.BorderLayout;
 import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.GridLayout;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
-import javax.swing.BorderFactory;
+import javax.swing.Box;
 import javax.swing.BoxLayout;
-import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JTextField;
-import net.runelite.client.ui.FontManager;
 
+/**
+ * Coordinator for the host form. It owns the frozen wire contract ({@link #collectValidatedFields},
+ * {@link #populate}) and raid applicability, and delegates presentation to the draft card
+ * (section B) and the More disclosure (section C). Sentinel choices never reach the wire map, and
+ * new-draft auto-behaviour is kept out of the populate path so an edit round-trips untouched.
+ */
 final class HostRaidFormFields extends JPanel
 {
 	private final HostDependencies dependencies;
 	private final Supplier<RaidType> selectedRaid;
 	private final BiConsumer<String, Boolean> status;
-	private final JComboBox<String> tier = new JComboBox<>(RaidType.TOB.getTiers());
-	private final JTextField world = new JTextField();
-	private final JComboBox<String> spots = new JComboBox<>(new String[]{"", "+1", "+2", "+3", "+4"});
-	private final JComboBox<String> team = new JComboBox<>();
-	private final JCheckBox mdps = new JCheckBox("mdps");
-	private final JCheckBox rdps = new JCheckBox("rdps");
-	private final JCheckBox nfrz = new JCheckBox("nfrz");
-	private final JCheckBox sfrz = new JCheckBox("sfrz");
-	private final JTextField roles = new JTextField();
-	private final JTextField scale = new JTextField();
-	private final JTextField fc = new JTextField();
-	private final JTextField layout = new JTextField();
-	private final JTextField partyHub = new JTextField();
-	private final JTextField description = new JTextField();
-	private JPanel roleRow;
-	private JPanel scaleFcRow;
-	private JPanel layoutRow;
-	private final JLabel tierHint = new JLabel();
+	private final Runnable onReadyChanged;
+	private final HostDraftCard card;
+	private final HostMoreOptions more;
 
 	HostRaidFormFields(HostDependencies dependencies, Supplier<RaidType> selectedRaid,
-		BiConsumer<String, Boolean> status)
+		BiConsumer<String, Boolean> status, Runnable onReadyChanged)
 	{
 		this.dependencies = dependencies;
 		this.selectedRaid = selectedRaid;
 		this.status = status;
+		this.onReadyChanged = onReadyChanged;
 		setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 		setOpaque(false);
 		setAlignmentX(Component.LEFT_ALIGNMENT);
-		styleFields();
-		buildFields();
-		tier.addActionListener(e -> updateLayoutVisibility());
-		refreshTeamOptions();
-		updateRoleVisibility();
-		updateLayoutVisibility();
-		updateScaleVisibility();
+		card = new HostDraftCard(selectedRaid, this::onCardChanged);
+		more = new HostMoreOptions(this::onMoreChanged);
+		add(card);
+		add(Box.createVerticalStrut(4));
+		add(more);
+		applyRaid();
 	}
+
+	// --- lifecycle called by HostRaidForm ---
 
 	void prepareExpanded()
 	{
-		if (world.getText().trim().isEmpty())
+		if (more.getWorld().trim().isEmpty())
 		{
 			final int currentWorld = dependencies.currentWorld().getAsInt();
 			if (currentWorld > 0)
 			{
-				world.setText(Integer.toString(currentWorld));
+				more.setWorld(Integer.toString(currentWorld));
 			}
 		}
 		dependencies.requestKc().run();
-		updateLayoutVisibility();
-		updateScaleVisibility();
+		refreshHeadlineAndTruth();
 	}
 
 	void refreshForRaid()
 	{
-		refreshTiers();
-		refreshTeamOptions();
-		updateRoleVisibility();
-		updateLayoutVisibility();
-		updateScaleVisibility();
+		applyRaid();
+		onReadyChanged.run();
 	}
 
 	void refreshTiers()
 	{
-		final RaidType raid = selectedRaid.get();
-		final int killCount = dependencies.userKc().applyAsInt(raid);
-		final Object previous = tier.getSelectedItem();
-		tier.removeAllItems();
-		for (String option : raid.getTiers())
-		{
-			if (killCount < 0 || raid.minKc(option) <= killCount)
-			{
-				tier.addItem(option);
-			}
-		}
-		if (tier.getItemCount() == 0 && raid.getTiers().length > 0)
-		{
-			tier.addItem(raid.getTiers()[0]);
-		}
-		restoreTierSelection(previous);
-		refreshTierHint(raid, killCount);
-	}
-
-	/** Restores the previous tier only if it is still offered, so an ineligible tier never stays selected. */
-	private void restoreTierSelection(Object previous)
-	{
-		if (previous == null)
-		{
-			return;
-		}
-		for (int i = 0; i < tier.getItemCount(); i++)
-		{
-			if (previous.equals(tier.getItemAt(i)))
-			{
-				tier.setSelectedIndex(i);
-				return;
-			}
-		}
-		if (tier.getItemCount() > 0)
-		{
-			tier.setSelectedIndex(0);
-		}
-	}
-
-	/** Explains missing tier options, shown only when the known KC actually hides some. */
-	private void refreshTierHint(RaidType raid, int killCount)
-	{
-		final boolean limited = killCount >= 0 && tier.getItemCount() < raid.getTiers().length;
-		tierHint.setVisible(limited);
-		if (limited)
-		{
-			tierHint.setText("Tiers limited by your " + raid.getDisplayName() + " KC: " + killCount);
-		}
-		revalidate();
-		repaint();
+		card.refreshTiers(dependencies.userKc().applyAsInt(selectedRaid.get()));
+		onReadyChanged.run();
 	}
 
 	void refreshCoxLayout()
 	{
-		if (!layoutApplies())
+		card.setLayoutState(layoutApplies(), scoutText());
+	}
+
+	/** Fills the friends chat with the local IGN for a fresh CoX draft only; never during populate. */
+	void captureFriendsChat()
+	{
+		if (selectedRaid.get() == RaidType.COX && more.getFriendsChat().trim().isEmpty())
 		{
-			return;
-		}
-		final String coxLayout = dependencies.coxLayout().get();
-		if (coxLayout != null && !coxLayout.isEmpty())
-		{
-			layout.setText(coxLayout);
-			revalidate();
-			repaint();
+			final String ign = dependencies.localIgn().get();
+			if (ign != null && !ign.isEmpty())
+			{
+				more.setFriendsChat(ign);
+				refreshHeadlineAndTruth();
+			}
 		}
 	}
+
+	boolean isPartyHubEmpty()
+	{
+		return more.isPartyHubEmpty();
+	}
+
+	void setGeneratedPartyHub(String value)
+	{
+		more.setPartyHub(value, true);
+		refreshHeadlineAndTruth();
+	}
+
+	void setTierEnabled(boolean enabled)
+	{
+		card.setTierEnabled(enabled);
+	}
+
+	boolean isSubmittable()
+	{
+		return card.getTier() != null && card.getSpots() != null;
+	}
+
+	void resetPresentation()
+	{
+		card.reset();
+		more.reset();
+		refreshHeadlineAndTruth();
+		onReadyChanged.run();
+	}
+
+	// --- wire contract ---
 
 	Map<String, String> collectValidatedFields()
 	{
 		final Map<String, String> fields = new LinkedHashMap<>();
 		fields.put("raid", selectedRaid.get().name());
-		if (tier.getSelectedItem() != null)
+		final String tier = card.getTier();
+		final String spots = card.getSpots();
+		if (tier == null || spots == null)
 		{
-			fields.put("tier", (String) tier.getSelectedItem());
+			status.accept("Pick a tier and how many you need.", true);
+			return null;
 		}
+		fields.put("tier", tier);
 		if (!collectWorld(fields) || !collectCox(fields))
 		{
 			return null;
 		}
-		putIfPresent(fields, "size", (String) team.getSelectedItem());
-		putIfPresent(fields, "spots", (String) spots.getSelectedItem());
+		putIfPresent(fields, "size", card.getTeamSize());
+		fields.put("spots", spots);
 		collectRoles(fields);
 		if (layoutApplies())
 		{
-			String value = layout.getText().trim();
-			if (value.isEmpty() && dependencies.coxLayout().get() != null)
+			String value = more.getLayoutText().trim();
+			final String scout = dependencies.coxLayout().get();
+			if (value.isEmpty() && scout != null)
 			{
-				value = dependencies.coxLayout().get().trim();
+				value = scout.trim();
 			}
 			putIfPresent(fields, "layout", value);
 		}
-		putIfPresent(fields, "partyHub", partyHub.getText().trim());
-		putIfPresent(fields, "desc", description.getText().trim());
+		putIfPresent(fields, "partyHub", more.getPartyHub().trim());
+		putIfPresent(fields, "desc", more.getDescription().trim());
 		return fields;
 	}
 
 	private boolean collectWorld(Map<String, String> fields)
 	{
-		final String value = world.getText().trim();
+		final String value = more.getWorld().trim();
 		if (value.isEmpty())
 		{
 			return true;
 		}
 		if (!value.matches("\\d{1,3}"))
 		{
+			more.openAndFocus(HostMoreOptions.Field.WORLD);
 			status.accept("World must be a number.", true);
 			return false;
 		}
 		final String blocked = dependencies.worldBlockReason().apply(Integer.parseInt(value));
 		if (blocked != null)
 		{
+			more.openAndFocus(HostMoreOptions.Field.WORLD);
 			status.accept("W" + value + " is " + blocked + ", pick a different world.", true);
 			return false;
 		}
@@ -238,7 +211,7 @@ final class HostRaidFormFields extends JPanel
 		{
 			return true;
 		}
-		final String value = scale.getText().trim();
+		final String value = card.getScale();
 		if (!value.isEmpty())
 		{
 			if (!value.matches("\\d{1,3}") || Integer.parseInt(value) > 100)
@@ -248,7 +221,7 @@ final class HostRaidFormFields extends JPanel
 			}
 			fields.put("scale", value);
 		}
-		putIfPresent(fields, "fc", fc.getText().trim());
+		putIfPresent(fields, "fc", more.getFriendsChat().trim());
 		return true;
 	}
 
@@ -257,17 +230,9 @@ final class HostRaidFormFields extends JPanel
 		final List<String> values = new ArrayList<>();
 		if (selectedRaid.get() == RaidType.TOB)
 		{
-			final JCheckBox[] roleChecks = {mdps, rdps, nfrz, sfrz};
-			final String[] names = {"mdps", "rdps", "nfrz", "sfrz"};
-			for (int index = 0; index < roleChecks.length; index++)
-			{
-				if (roleChecks[index].isSelected())
-				{
-					values.add(names[index]);
-				}
-			}
+			values.addAll(card.getSelectedRoles());
 		}
-		final String extra = roles.getText().trim();
+		final String extra = more.getRoles().trim();
 		if (!extra.isEmpty())
 		{
 			values.add(extra);
@@ -288,153 +253,31 @@ final class HostRaidFormFields extends JPanel
 
 	void populate(Map<String, String> values)
 	{
-		refreshTiers();
-		if (values.get("tier") != null)
-		{
-			tier.setSelectedItem(values.get("tier"));
-		}
-		world.setText(values.getOrDefault("world", ""));
-		refreshTeamOptions();
-		team.setSelectedItem(values.getOrDefault("size", ""));
-		spots.setSelectedItem(values.getOrDefault("spots", ""));
-		populateRoles(values.get("roles"));
-		scale.setText(values.getOrDefault("scale", ""));
-		fc.setText(values.getOrDefault("fc", ""));
-		layout.setText(values.getOrDefault("layout", ""));
-		partyHub.setText(values.getOrDefault("partyHub", ""));
-		description.setText(values.getOrDefault("desc", ""));
-		updateRoleVisibility();
-		updateScaleVisibility();
-		updateLayoutVisibility();
-	}
-
-	void setTierEnabled(boolean enabled)
-	{
-		tier.setEnabled(enabled);
-	}
-
-	boolean isPartyHubEmpty()
-	{
-		return partyHub.getText().trim().isEmpty();
-	}
-
-	void setPartyHub(String value)
-	{
-		partyHub.setText(value);
-	}
-
-	private void styleFields()
-	{
-		WdrTheme.styleCombo(tier);
-		WdrTheme.styleCombo(spots);
-		WdrTheme.styleCombo(team);
-		for (JTextField field : new JTextField[]{world, roles, scale, fc, layout, partyHub, description})
-		{
-			WdrTheme.styleField(field);
-		}
-	}
-
-	private void buildFields()
-	{
-		add(pair(labeled("Tier", tier), labeled("World", world)));
-		tierHint.setFont(FontManager.getRunescapeSmallFont());
-		tierHint.setForeground(WdrTheme.TEXT_DIM);
-		tierHint.setAlignmentX(Component.LEFT_ALIGNMENT);
-		tierHint.setVisible(false);
-		add(tierHint);
-		add(pair(labeled("Team size", team), labeled("Open spots", spots)));
-		scaleFcRow = pair(labeled("Scale (0-100)", scale), labeled("Friends chat", fc));
-		add(scaleFcRow);
-		layoutRow = labeled("Layout (auto)", layout);
-		add(layoutRow);
-		JPanel checkboxes = new JPanel(new GridLayout(2, 2));
-		checkboxes.setOpaque(false);
-		for (JCheckBox checkbox : new JCheckBox[]{mdps, rdps, nfrz, sfrz})
-		{
-			checkbox.setOpaque(false);
-			checkbox.setForeground(WdrTheme.TEXT);
-			checkbox.setFont(FontManager.getRunescapeSmallFont());
-			checkboxes.add(checkbox);
-		}
-		roleRow = labeled("Roles needed", checkboxes);
-		add(roleRow);
-		add(labeled("Other roles", roles));
-		partyHub.setToolTipText("Optional passphrase joiners use with the RuneLite Party plugin");
-		add(labeled("Party hub", partyHub));
-		description.setToolTipText("e.g. pogstack, max only");
-		add(labeled("Description", description));
-	}
-
-	private void refreshTeamOptions()
-	{
 		final RaidType raid = selectedRaid.get();
-		final Object previous = team.getSelectedItem();
-		team.removeAllItems();
-		team.addItem("");
-		final int minimum = raid == RaidType.TOB ? 2 : 1;
-		final int maximum = raid == RaidType.TOB ? 5 : 8;
-		for (int size = minimum; size <= maximum; size++)
-		{
-			team.addItem(String.valueOf(size));
-		}
-		if (previous != null)
-		{
-			team.setSelectedItem(previous);
-		}
+		card.setRaid(raid);
+		card.refreshTiers(dependencies.userKc().applyAsInt(raid));
+		card.selectTier(values.get("tier"));
+		more.setRaid(raid);
+		more.setWorld(values.getOrDefault("world", ""));
+		card.selectSize(values.getOrDefault("size", ""));
+		card.selectSpots(values.getOrDefault("spots", ""));
+		populateRoles(values.get("roles"));
+		card.setScale(values.getOrDefault("scale", ""));
+		more.setFriendsChat(values.getOrDefault("fc", ""));
+		more.setLayout(values.getOrDefault("layout", ""));
+		more.setPartyHub(values.getOrDefault("partyHub", ""), false);
+		more.setDescription(values.getOrDefault("desc", ""));
+		final boolean applies = layoutApplies();
+		card.setLayoutState(applies, scoutText());
+		more.setLayoutEditorVisible(applies);
+		refreshHeadlineAndTruth();
+		onReadyChanged.run();
 	}
 
-	private void updateRoleVisibility()
-	{
-		roleRow.setVisible(selectedRaid.get() == RaidType.TOB);
-		revalidate();
-		repaint();
-	}
-
-	private void updateScaleVisibility()
-	{
-		final boolean cox = selectedRaid.get() == RaidType.COX;
-		scaleFcRow.setVisible(cox);
-		if (cox && fc.getText().trim().isEmpty())
-		{
-			final String ign = dependencies.localIgn().get();
-			if (ign != null && !ign.isEmpty())
-			{
-				fc.setText(ign);
-			}
-		}
-		revalidate();
-		repaint();
-	}
-
-	private boolean layoutApplies()
-	{
-		final Object selectedTier = tier.getSelectedItem();
-		return selectedRaid.get() == RaidType.COX && selectedTier != null
-			&& !selectedTier.toString().contains("CM");
-	}
-
-	private void updateLayoutVisibility()
-	{
-		final boolean show = layoutApplies();
-		layoutRow.setVisible(show);
-		if (show && layout.getText().trim().isEmpty())
-		{
-			final String coxLayout = dependencies.coxLayout().get();
-			if (coxLayout != null && !coxLayout.isEmpty())
-			{
-				layout.setText(coxLayout);
-			}
-		}
-		revalidate();
-		repaint();
-	}
-
+	/** Known roles become chips; anything else survives verbatim in the More "Other roles" field. */
 	private void populateRoles(String value)
 	{
-		mdps.setSelected(false);
-		rdps.setSelected(false);
-		nfrz.setSelected(false);
-		sfrz.setSelected(false);
+		final List<String> known = new ArrayList<>();
 		final List<String> extras = new ArrayList<>();
 		if (value != null)
 		{
@@ -443,40 +286,69 @@ final class HostRaidFormFields extends JPanel
 				final String role = part.trim().toLowerCase();
 				switch (role)
 				{
-					case "mdps": mdps.setSelected(true); break;
-					case "rdps": rdps.setSelected(true); break;
-					case "nfrz": nfrz.setSelected(true); break;
-					case "sfrz": sfrz.setSelected(true); break;
-					default: if (!role.isEmpty()) extras.add(part.trim());
+					case "mdps":
+					case "rdps":
+					case "nfrz":
+					case "sfrz":
+						known.add(role);
+						break;
+					default:
+						if (!role.isEmpty())
+						{
+							extras.add(part.trim());
+						}
 				}
 			}
 		}
-		roles.setText(String.join(", ", extras));
+		card.setSelectedRoles(known);
+		more.setRoles(String.join(", ", extras));
 	}
 
-	private static JPanel pair(JPanel left, JPanel right)
+	// --- applicability + presentation glue ---
+
+	private void applyRaid()
 	{
-		JPanel pair = new JPanel(new GridLayout(1, 2, 6, 0));
-		pair.setOpaque(false);
-		pair.add(left);
-		pair.add(right);
-		pair.setAlignmentX(Component.LEFT_ALIGNMENT);
-		pair.setMaximumSize(new Dimension(Integer.MAX_VALUE, pair.getPreferredSize().height));
-		return pair;
+		final RaidType raid = selectedRaid.get();
+		card.setRaid(raid);
+		card.refreshTiers(dependencies.userKc().applyAsInt(raid));
+		final boolean applies = layoutApplies();
+		card.setLayoutState(applies, scoutText());
+		more.setRaid(raid);
+		more.setLayoutEditorVisible(applies);
+		refreshHeadlineAndTruth();
 	}
 
-	private static JPanel labeled(String label, Component field)
+	private void onCardChanged()
 	{
-		JLabel text = new JLabel(label);
-		text.setForeground(WdrTheme.TEXT_DIM);
-		text.setFont(FontManager.getRunescapeSmallFont());
-		JPanel row = new JPanel(new BorderLayout(0, 1));
-		row.setOpaque(false);
-		row.setAlignmentX(Component.LEFT_ALIGNMENT);
-		row.setBorder(BorderFactory.createEmptyBorder(2, 0, 2, 0));
-		row.add(text, BorderLayout.NORTH);
-		row.add(field, BorderLayout.CENTER);
-		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, row.getPreferredSize().height));
-		return row;
+		final boolean applies = layoutApplies();
+		card.setLayoutState(applies, scoutText());
+		more.setLayoutEditorVisible(applies);
+		refreshHeadlineAndTruth();
+		onReadyChanged.run();
+	}
+
+	private void onMoreChanged()
+	{
+		refreshHeadlineAndTruth();
+	}
+
+	private void refreshHeadlineAndTruth()
+	{
+		card.refreshHeadline(more.getWorld().trim());
+		final String hub = more.getPartyHub().trim();
+		final String friendsChat = selectedRaid.get() == RaidType.COX ? more.getFriendsChat().trim() : "";
+		card.refreshTruth(hub, friendsChat);
+	}
+
+	private boolean layoutApplies()
+	{
+		final String tier = card.getTier();
+		return selectedRaid.get() == RaidType.COX && tier != null && !tier.contains("CM");
+	}
+
+	private String scoutText()
+	{
+		final String scout = dependencies.coxLayout().get();
+		return scout != null && !scout.isEmpty() ? "Scout: " + scout : "Scout: not detected yet";
 	}
 }

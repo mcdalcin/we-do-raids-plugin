@@ -206,7 +206,7 @@ public class HostFormPanel extends JPanel
 		raidForm.beginEdit();
 		livePostPanel.setVisible(false);
 		raidForm.setVisible(true);
-		raidForm.setStatus("Editing your live raid. Change anything, then Save changes.", false);
+		raidForm.setStatus("Editing your live raid.", false);
 		revalidate();
 		repaint();
 	}

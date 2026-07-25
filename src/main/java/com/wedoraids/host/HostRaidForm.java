@@ -50,6 +50,8 @@ final class HostRaidForm extends JPanel
 	private final WdrButton cancelEditButton = new WdrButton("Cancel edit", WdrButton.Variant.GHOST);
 	private final JLabel status = new JLabel(" ");
 	private boolean raidChosen;
+	private boolean editing;
+	private boolean promptShown;
 
 	HostRaidForm(HostDependencies dependencies, Runnable submit, Runnable cancelEdit)
 	{
@@ -64,17 +66,23 @@ final class HostRaidForm extends JPanel
 		details.setOpaque(false);
 		details.setVisible(false);
 		details.setAlignmentX(Component.LEFT_ALIGNMENT);
-		fields = new HostRaidFormFields(dependencies, this::selectedRaid, this::setStatus);
+		fields = new HostRaidFormFields(dependencies, this::selectedRaid, this::setStatus,
+			this::refreshSubmitState);
 		details.add(fields);
 		details.add(Box.createVerticalStrut(2));
 		buildActions(submit, cancelEdit);
 		add(details);
 		raidCombo.addActionListener(e -> fields.refreshForRaid());
+		refreshSubmitState();
 	}
 
 	void prepareExpanded()
 	{
-		fields.prepareExpanded();
+		// New-draft world capture only; an in-progress edit must keep the values it was populated with.
+		if (!editing)
+		{
+			fields.prepareExpanded();
+		}
 	}
 
 	void refreshTiers()
@@ -116,6 +124,7 @@ final class HostRaidForm extends JPanel
 
 	void beginEdit()
 	{
+		editing = true;
 		postButton.setText("Save changes");
 		cancelEditButton.setVisible(true);
 		raidCombo.setEnabled(false);
@@ -125,11 +134,37 @@ final class HostRaidForm extends JPanel
 
 	void resetEdit()
 	{
+		editing = false;
 		postButton.setText("Post to Discord");
 		cancelEditButton.setVisible(false);
 		raidCombo.setEnabled(true);
 		fields.setTierEnabled(true);
 		setRaidTabsEnabled(true);
+		// Presentation must reset with the controls: collapse More and clear the draft so nothing leaks
+		// into the next session.
+		fields.resetPresentation();
+		refreshSubmitState();
+	}
+
+	/** Post is the one gate: it stays disabled until the host has explicitly chosen a tier and spots. */
+	private void refreshSubmitState()
+	{
+		final boolean ready = fields.isSubmittable();
+		postButton.setEnabled(ready);
+		if (editing)
+		{
+			return;
+		}
+		if (!ready)
+		{
+			setStatus("Pick a tier and how many you need.", false);
+			promptShown = true;
+		}
+		else if (promptShown)
+		{
+			setStatus(" ", false);
+			promptShown = false;
+		}
 	}
 
 	void setStatus(String message, boolean error)
@@ -205,8 +240,9 @@ final class HostRaidForm extends JPanel
 		refreshRaidTabs();
 		if (dependencies.autoHub().getAsBoolean() && fields.isPartyHubEmpty())
 		{
-			fields.setPartyHub(generatePartyHub());
+			fields.setGeneratedPartyHub(generatePartyHub());
 		}
+		fields.captureFriendsChat();
 		revalidate();
 		repaint();
 	}
