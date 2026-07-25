@@ -99,7 +99,7 @@ final class HostRaidFormFields extends JPanel
 
 	void refreshCoxLayout()
 	{
-		card.setLayoutState(layoutApplies(), scoutText());
+		syncLayoutState();
 	}
 
 	/** Fills the friends chat with the local IGN for a fresh CoX draft only; never during populate. */
@@ -267,9 +267,7 @@ final class HostRaidFormFields extends JPanel
 		more.setLayout(values.getOrDefault("layout", ""));
 		more.setPartyHub(values.getOrDefault("partyHub", ""), false);
 		more.setDescription(values.getOrDefault("desc", ""));
-		final boolean applies = layoutApplies();
-		card.setLayoutState(applies, scoutText());
-		more.setLayoutEditorVisible(applies);
+		syncLayoutState();
 		refreshHeadlineAndTruth();
 		onReadyChanged.run();
 	}
@@ -311,18 +309,14 @@ final class HostRaidFormFields extends JPanel
 		final RaidType raid = selectedRaid.get();
 		card.setRaid(raid);
 		card.refreshTiers(dependencies.userKc().applyAsInt(raid));
-		final boolean applies = layoutApplies();
-		card.setLayoutState(applies, scoutText());
 		more.setRaid(raid);
-		more.setLayoutEditorVisible(applies);
+		syncLayoutState();
 		refreshHeadlineAndTruth();
 	}
 
 	private void onCardChanged()
 	{
-		final boolean applies = layoutApplies();
-		card.setLayoutState(applies, scoutText());
-		more.setLayoutEditorVisible(applies);
+		syncLayoutState();
 		refreshHeadlineAndTruth();
 		onReadyChanged.run();
 	}
@@ -346,9 +340,31 @@ final class HostRaidFormFields extends JPanel
 		return selectedRaid.get() == RaidType.COX && tier != null && !tier.contains("CM");
 	}
 
+	/** Pushes the scout state to the card, and the editor's own explanation to More. */
+	private void syncLayoutState()
+	{
+		final boolean applies = layoutApplies();
+		card.setLayoutState(applies, scoutText());
+		more.setLayoutEditorVisible(applies);
+		more.setLayoutScout(layoutEditorHint());
+	}
+
 	private String scoutText()
 	{
 		final String scout = dependencies.coxLayout().get();
 		return scout != null && !scout.isEmpty() ? "Scout: " + scout : "Scout: not detected yet";
+	}
+
+	/**
+	 * The editor's hint answers what the field is for, never what the scout currently says. The card
+	 * already states the scout, and repeating it here put the same sentence on screen twice whenever
+	 * More was open.
+	 */
+	private String layoutEditorHint()
+	{
+		final String scout = dependencies.coxLayout().get();
+		return scout != null && !scout.isEmpty()
+			? "Scouted for you. Edit to override."
+			: "Fills in once you scout the raid.";
 	}
 }

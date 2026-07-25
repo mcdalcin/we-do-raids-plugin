@@ -60,6 +60,7 @@ final class HostMoreOptions extends JPanel
 	private final JTextField layout = new JTextField();
 	private final JTextField description = new JTextField();
 	private final JLabel partyHubHint = new JLabel();
+	private final JLabel layoutHint = new JLabel();
 	private final WdrButton toggle = new WdrButton("More options", WdrButton.Variant.GHOST);
 	private final JPanel content = new JPanel();
 	private JPanel friendsChatRow;
@@ -92,7 +93,10 @@ final class HostMoreOptions extends JPanel
 		content.add(HostFormLayout.labeled("Other roles", roles));
 		content.add(HostFormLayout.labeledWithHint("Description", description,
 			HostFormLayout.hint("e.g. pogstack, max only")));
-		layoutRow = HostFormLayout.labeled("Layout", layout);
+		layoutHint.setFont(FontManager.getRunescapeSmallFont());
+		layoutHint.setForeground(WdrTheme.TEXT_DIM);
+		layoutHint.setAlignmentX(Component.LEFT_ALIGNMENT);
+		layoutRow = HostFormLayout.labeledWithHint("Layout", layout, layoutHint);
 		content.add(layoutRow);
 		add(content);
 
@@ -161,6 +165,16 @@ final class HostMoreOptions extends JPanel
 	void setLayoutEditorVisible(boolean visible)
 	{
 		layoutRow.setVisible(visible);
+	}
+
+	/**
+	 * Mirrors the card's scout line into the editor's own hint, reusing the {@code Scout:} wording so
+	 * the card and More agree, and the editor is never a bare box that asks for input and explains
+	 * nothing: the hint states what was scouted, or that nothing has been detected yet.
+	 */
+	void setLayoutScout(String text)
+	{
+		layoutHint.setText(WrappedText.html(text, HUB_HINT_WIDTH));
 	}
 
 	// --- values ---

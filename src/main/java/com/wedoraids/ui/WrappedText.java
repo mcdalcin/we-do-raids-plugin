@@ -34,18 +34,24 @@ import net.runelite.client.ui.PluginPanel;
  * different line lengths for the same kind of text.
  *
  * <p>The values are measured against the rendered panel rather than derived from
- * {@link PluginPanel#PANEL_WIDTH}. Swing's HTML renderer adds its own body margin, so a label
- * declaring {@code width:177px} reports a preferred width of 230. When that preferred width
- * exceeds the width the layout actually grants, the label's preferred <em>height</em> is computed
- * for the wider measure, the text wraps to an extra line at render time, and that line is clipped.
- * Keep these conservative, and re-check with a render if the panel's padding changes.
+ * {@link PluginPanel#PANEL_WIDTH}, because Swing's HTML renderer does not treat the declared body
+ * width as a wrap boundary. Left uncapped, a status label is granted the full panel width and the
+ * HTML fills it, so the declared width has no effect and the widest line inks to the panel edge:
+ * measured, a 178px body still inked to column 214 on the 225px panel (content edge 215), clipping
+ * the tail. Reducing the body width alone did nothing (165px still inked to 213). The declared
+ * width only takes effect once the label's own maximum width is capped; the consumer must do both.
+ *
+ * <p>{@link #PANEL} of 150 was measured by rendering a worst-case status in the design gallery: at a
+ * 150px body the copy wraps to two lines, and with the status label capped at 190px the widest line
+ * inks to column 199, a clear right margin inside the 205px measure. Keep these conservative, and
+ * re-check with a render if the panel's padding changes.
  */
 public final class WrappedText
 {
 	/** Line length for copy inside a card. */
 	public static final int CARD = 150;
 	/** Line length for copy sitting directly on the panel, such as form status lines. */
-	public static final int PANEL = 178;
+	public static final int PANEL = 150;
 
 	private WrappedText()
 	{

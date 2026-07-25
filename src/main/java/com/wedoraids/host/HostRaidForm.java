@@ -41,6 +41,9 @@ import net.runelite.client.ui.FontManager;
 
 final class HostRaidForm extends JPanel
 {
+	/** Measured cap for the status label so its widest line inks inside the panel with a right margin. */
+	private static final int STATUS_MAX_WIDTH = 190;
+
 	private final HostDependencies dependencies;
 	private final JComboBox<String> raidCombo = new JComboBox<>(new String[]{"ToB", "CoX", "ToA"});
 	private final RaidTabButton[] raidTabs = new RaidTabButton[3];
@@ -210,6 +213,11 @@ final class HostRaidForm extends JPanel
 		status.setFont(FontManager.getRunescapeSmallFont());
 		status.setForeground(WdrTheme.TEXT_DIM);
 		status.setAlignmentX(Component.LEFT_ALIGNMENT);
+		// Cap the width so the label renders its wrap measure instead of stretching. Left uncapped it is
+		// granted the full panel width and Swing's HTML fills that, inking to the edge and clipping the
+		// tail. 190px was measured by rendering: the 150px body ({@link WrappedText#PANEL}) wraps to two
+		// lines whose widest inks to column 199, a clear margin inside the 205px measure, with no clip.
+		status.setMaximumSize(new Dimension(STATUS_MAX_WIDTH, Integer.MAX_VALUE));
 		details.add(status);
 	}
 

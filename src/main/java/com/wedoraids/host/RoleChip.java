@@ -36,8 +36,8 @@ import net.runelite.client.ui.FontManager;
 
 /**
  * A single toggling role chip, painted like {@link RaidTabButton} but never in a raid hue: selection
- * is a neutral state change so the raid colour keeps meaning only "which raid". Chosen chips carry
- * primary ink and a light fill; the rest sit as recessed fields.
+ * is a neutral state change so the raid colour keeps meaning only "which raid". A chosen chip is a
+ * raised neutral fill under bold primary ink; hover is a lighter recess; the rest sit as flat fields.
  */
 final class RoleChip extends JButton
 {
@@ -65,6 +65,7 @@ final class RoleChip extends JButton
 	void setChosen(boolean value)
 	{
 		chosen = value;
+		setFont(chosen ? FontManager.getRunescapeBoldFont() : FontManager.getRunescapeSmallFont());
 		setForeground(chosen ? WdrTheme.TEXT : WdrTheme.TEXT_DIM);
 		repaint();
 	}
@@ -75,7 +76,11 @@ final class RoleChip extends JButton
 		final Graphics2D graphics2d = (Graphics2D) graphics.create();
 		graphics2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		final Color fill;
-		if (chosen || getModel().isRollover())
+		if (chosen)
+		{
+			fill = WdrTheme.CHIP_CHOSEN;
+		}
+		else if (getModel().isRollover())
 		{
 			fill = WdrTheme.HOVER;
 		}

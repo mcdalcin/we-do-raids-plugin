@@ -25,7 +25,9 @@
 package com.wedoraids.host;
 
 import com.wedoraids.feed.RaidType;
+import com.wedoraids.ui.HtmlEscape;
 import com.wedoraids.ui.WdrTheme;
+import com.wedoraids.ui.WrappedText;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -38,7 +40,6 @@ import java.util.function.Supplier;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
-import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
@@ -50,24 +51,23 @@ import net.runelite.client.ui.FontManager;
  * feed card, so a host writes a call rather than filling a database record. The headline mirrors
  * what a joiner will see; below it sit the two choices that gate a post (tier, and how many are
  * needed), the ToB role chips, the CoX scale, the scouted layout, and a truth line of everything
- * else that will ship.
+ * else that will ship. The sentinel-guarded combos live in {@link SentinelCombo} and
+ * {@link TierChooser}; this card owns the presentation around them.
  */
 final class HostDraftCard extends JPanel
 {
-	private static final String TIER_SENTINEL = "Choose tier\u2026";
 	private static final String DASH = "\u2014";
 
 	private final Supplier<RaidType> selectedRaid;
 	private final Runnable onChange;
-	private final JComboBox<String> tier = new JComboBox<>();
-	private final JComboBox<String> spots = new JComboBox<>();
-	private final JComboBox<String> team = new JComboBox<>();
+	private final TierChooser tierChooser = new TierChooser(this::fireChange);
+	private final SentinelCombo spots = new SentinelCombo(DASH, this::fireChange);
+	private final SentinelCombo team = new SentinelCombo(DASH, this::fireChange);
 	private final JTextField scale = new JTextField();
 	private final RoleChip[] chips =
 		{new RoleChip("mdps"), new RoleChip("rdps"), new RoleChip("nfrz"), new RoleChip("sfrz")};
 	private final JLabel raidLabel = new JLabel();
 	private final JLabel worldLabel = new JLabel();
-	private final JLabel tierHint = new JLabel();
 	private final JLabel layoutState = new JLabel();
 	private final JLabel truthLine = new JLabel();
 	private JPanel roleGroup;
@@ -83,28 +83,23 @@ final class HostDraftCard extends JPanel
 		setBackground(WdrTheme.CARD);
 		setBorder(cardBorder(selectedRaid.get().getColor()));
 		setAlignmentX(Component.LEFT_ALIGNMENT);
-		WdrTheme.styleCombo(tier);
-		WdrTheme.styleCombo(spots);
-		WdrTheme.styleCombo(team);
 		WdrTheme.styleField(scale);
 		buildHeadline();
 		add(Box.createVerticalStrut(4));
-		HostFormLayout.fullWidth(tier);
-		add(tier);
-		dim(tierHint);
-		tierHint.setVisible(false);
-		add(tierHint);
+		HostFormLayout.fullWidth(tierChooser.combo());
+		add(tierChooser.combo());
+		add(tierChooser.hint());
 		add(Box.createVerticalStrut(2));
 		add(HostFormLayout.pair(HostFormLayout.labeled("Need", spots), HostFormLayout.labeled("Team", team)));
 		buildRoleGroup();
-		scaleRow = HostFormLayout.labeled("Scale", scale);
+		scaleRow = HostFormLayout.labeled("Scale (0-100)", scale);
 		add(scaleRow);
 		dim(layoutState);
 		add(layoutState);
 		add(Box.createVerticalStrut(1));
 		dim(truthLine);
 		add(truthLine);
-		wireListeners();
+		scale.getDocument().addDocumentListener(HostFormLayout.onChange(this::fireChange));
 		setRaid(selectedRaid.get());
 	}
 
@@ -143,42 +138,40 @@ final class HostDraftCard extends JPanel
 		final RaidType raid = selectedRaid.get();
 		final String tierValue = getTier();
 		raidLabel.setForeground(raid.getColor());
-		if (tierValue == null)
-		{
-			raidLabel.setText(raid.getDisplayName());
-		}
-		else
-		{
-			raidLabel.setText(raid.getDisplayName() + " " + tierValue);
-		}
+		raidLabel.setText(tierValue == null ? raid.getDisplayName() : raid.getDisplayName() + " " + tierValue);
 		worldLabel.setText(world.isEmpty() ? "" : "W" + world);
 		revalidate();
 		repaint();
 	}
 
-	/** Truth line (B7): the effective values not already shown above, {@code ·}-joined and dim. */
+	/** Truth line (B7): the effective values not already shown above, each on its own line and dim. */
 	void refreshTruth(String partyHub, String friendsChat)
 	{
-		final StringBuilder truth = new StringBuilder();
-		append(truth, partyHub.isEmpty() ? null : "ph: " + partyHub);
-		append(truth, friendsChat.isEmpty() ? null : "fc " + friendsChat);
-		truthLine.setText(truth.toString());
-		truthLine.setVisible(truth.length() > 0);
+		final StringBuilder body = new StringBuilder();
+		appendRoute(body, partyHub.isEmpty() ? null : "ph: " + partyHub);
+		appendRoute(body, friendsChat.isEmpty() ? null : "fc " + friendsChat);
+		// A single JLabel ellipsizes, which silently drops a whole joining route (or the tail of a
+		// passphrase, and a partial passphrase is useless). Rendering as HTML at the card measure wraps
+		// instead of truncating, and each route gets its own line so a long value never pushes the next
+		// one off the end. Every route stays legible; none can vanish.
+		truthLine.setText(body.length() == 0 ? ""
+			: "<html><body style='width:" + WrappedText.CARD + "px'>" + body + "</body></html>");
+		truthLine.setVisible(body.length() > 0);
 		revalidate();
 		repaint();
 	}
 
-	private static void append(StringBuilder truth, String value)
+	private static void appendRoute(StringBuilder body, String value)
 	{
 		if (value == null)
 		{
 			return;
 		}
-		if (truth.length() > 0)
+		if (body.length() > 0)
 		{
-			truth.append(" \u00b7 ");
+			body.append("<br>");
 		}
-		truth.append(value);
+		body.append(HtmlEscape.escape(value));
 	}
 
 	// --- role chips (B4) ---
@@ -220,108 +213,40 @@ final class HostDraftCard extends JPanel
 
 	void setRaid(RaidType raid)
 	{
-		updating = true;
-		try
-		{
-			setBorder(cardBorder(raid.getColor()));
-			rebuildSpots(raid);
-			rebuildTeam(raid);
-			roleGroup.setVisible(raid == RaidType.TOB);
-			scaleRow.setVisible(raid == RaidType.COX);
-		}
-		finally
-		{
-			updating = false;
-		}
+		setBorder(cardBorder(raid.getColor()));
+		spots.setOptions(spotsOptions(raid));
+		team.setOptions(teamOptions(raid));
+		roleGroup.setVisible(raid == RaidType.TOB);
+		scaleRow.setVisible(raid == RaidType.COX);
 		refreshHeadline(headlineWorld);
 	}
 
-	private void rebuildSpots(RaidType raid)
+	private static List<String> spotsOptions(RaidType raid)
 	{
-		final Object previous = spots.getSelectedItem();
-		spots.removeAllItems();
-		spots.addItem(DASH);
+		final List<String> options = new ArrayList<>();
 		final int maxTeam = raid == RaidType.TOB ? 5 : 8;
 		for (int open = 1; open < maxTeam; open++)
 		{
-			spots.addItem("+" + open);
+			options.add("+" + open);
 		}
-		if (previous != null)
-		{
-			spots.setSelectedItem(previous);
-		}
+		return options;
 	}
 
-	private void rebuildTeam(RaidType raid)
+	private static List<String> teamOptions(RaidType raid)
 	{
-		final Object previous = team.getSelectedItem();
-		team.removeAllItems();
-		team.addItem(DASH);
+		final List<String> options = new ArrayList<>();
 		final int minimum = raid == RaidType.TOB ? 2 : 1;
 		final int maximum = raid == RaidType.TOB ? 5 : 8;
 		for (int size = minimum; size <= maximum; size++)
 		{
-			team.addItem(String.valueOf(size));
+			options.add(String.valueOf(size));
 		}
-		if (previous != null)
-		{
-			team.setSelectedItem(previous);
-		}
+		return options;
 	}
-
-	// --- tier chooser (B2) ---
 
 	void refreshTiers(int killCount)
 	{
-		final RaidType raid = selectedRaid.get();
-		final Object previous = tier.getSelectedItem();
-		updating = true;
-		try
-		{
-			tier.removeAllItems();
-			tier.addItem(TIER_SENTINEL);
-			for (String option : raid.getTiers())
-			{
-				if (killCount < 0 || raid.minKc(option) <= killCount)
-				{
-					tier.addItem(option);
-				}
-			}
-			restoreTierSelection(previous);
-		}
-		finally
-		{
-			updating = false;
-		}
-		refreshTierHint(raid, killCount);
-	}
-
-	/** Restores a previously chosen tier only if still offered; otherwise falls back to the sentinel. */
-	private void restoreTierSelection(Object previous)
-	{
-		if (previous != null && !TIER_SENTINEL.equals(previous))
-		{
-			for (int index = 0; index < tier.getItemCount(); index++)
-			{
-				if (previous.equals(tier.getItemAt(index)))
-				{
-					tier.setSelectedIndex(index);
-					return;
-				}
-			}
-		}
-		tier.setSelectedIndex(0);
-	}
-
-	private void refreshTierHint(RaidType raid, int killCount)
-	{
-		final int realCount = tier.getItemCount() - 1;
-		final boolean limited = killCount >= 0 && realCount < raid.getTiers().length;
-		tierHint.setVisible(limited);
-		if (limited)
-		{
-			tierHint.setText("Tiers limited by your " + raid.getDisplayName() + " KC: " + killCount);
-		}
+		tierChooser.refresh(selectedRaid.get(), killCount);
 		revalidate();
 		repaint();
 	}
@@ -340,20 +265,17 @@ final class HostDraftCard extends JPanel
 
 	String getTier()
 	{
-		final Object item = tier.getSelectedItem();
-		return item == null || TIER_SENTINEL.equals(item) ? null : (String) item;
+		return tierChooser.getTier();
 	}
 
 	String getSpots()
 	{
-		final Object item = spots.getSelectedItem();
-		return item == null || DASH.equals(item) ? null : (String) item;
+		return spots.read();
 	}
 
 	String getTeamSize()
 	{
-		final Object item = team.getSelectedItem();
-		return item == null || DASH.equals(item) ? null : (String) item;
+		return team.read();
 	}
 
 	String getScale()
@@ -363,36 +285,17 @@ final class HostDraftCard extends JPanel
 
 	void selectTier(String value)
 	{
-		updating = true;
-		try
-		{
-			if (value == null)
-			{
-				tier.setSelectedIndex(0);
-			}
-			else
-			{
-				tier.setSelectedItem(value);
-				if (getTier() == null)
-				{
-					tier.setSelectedIndex(0);
-				}
-			}
-		}
-		finally
-		{
-			updating = false;
-		}
+		tierChooser.select(value);
 	}
 
 	void selectSpots(String value)
 	{
-		setCombo(spots, value);
+		spots.select(value);
 	}
 
 	void selectSize(String value)
 	{
-		setCombo(team, value);
+		team.select(value);
 	}
 
 	void setScale(String value)
@@ -400,55 +303,28 @@ final class HostDraftCard extends JPanel
 		scale.setText(value);
 	}
 
-	private void setCombo(JComboBox<String> combo, String value)
-	{
-		updating = true;
-		try
-		{
-			final String target = value == null || value.isEmpty() ? DASH : value;
-			combo.setSelectedItem(target);
-			if (!target.equals(combo.getSelectedItem()))
-			{
-				combo.setSelectedIndex(0);
-			}
-		}
-		finally
-		{
-			updating = false;
-		}
-	}
-
 	void setTierEnabled(boolean enabled)
 	{
-		tier.setEnabled(enabled);
+		tierChooser.setEnabled(enabled);
 	}
 
 	void reset()
 	{
+		tierChooser.reset();
+		spots.clear();
+		team.clear();
 		updating = true;
 		try
 		{
-			if (tier.getItemCount() > 0)
-			{
-				tier.setSelectedIndex(0);
-			}
-			if (spots.getItemCount() > 0)
-			{
-				spots.setSelectedIndex(0);
-			}
-			if (team.getItemCount() > 0)
-			{
-				team.setSelectedIndex(0);
-			}
 			scale.setText("");
-			for (RoleChip chip : chips)
-			{
-				chip.setChosen(false);
-			}
 		}
 		finally
 		{
 			updating = false;
+		}
+		for (RoleChip chip : chips)
+		{
+			chip.setChosen(false);
 		}
 		layoutState.setVisible(false);
 		truthLine.setVisible(false);
@@ -456,14 +332,6 @@ final class HostDraftCard extends JPanel
 	}
 
 	// --- internals ---
-
-	private void wireListeners()
-	{
-		tier.addActionListener(event -> fireChange());
-		spots.addActionListener(event -> fireChange());
-		team.addActionListener(event -> fireChange());
-		scale.getDocument().addDocumentListener(HostFormLayout.onChange(this::fireChange));
-	}
 
 	private void fireChange()
 	{

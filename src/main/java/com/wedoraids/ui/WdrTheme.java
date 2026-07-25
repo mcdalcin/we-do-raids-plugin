@@ -53,6 +53,14 @@ public final class WdrTheme
 	public static final Color FIELD = ColorScheme.DARKER_GRAY_COLOR;
 	public static final Color HOVER = ColorScheme.DARK_GRAY_HOVER_COLOR;
 	public static final Color BORDER = ColorScheme.MEDIUM_GRAY_COLOR;
+	/**
+	 * The raised fill of a chosen toggle chip. A selected chip has to carry its state on its largest
+	 * surface, not only a 1px outline: {@link #FIELD} and {@link #HOVER} sit at 1.06:1, so the fill
+	 * encoded almost nothing. This neutral measures 1.82:1 against the card/field surface it replaces,
+	 * clearing the 1.5:1 floor for a state a user reads at a glance, while primary ink stays at 7.06:1
+	 * above it. Neutral by construction: raid hue is reserved for raid identity, never for chip state.
+	 */
+	public static final Color CHIP_CHOSEN = new Color(72, 72, 72);
 
 	/** Primary ink. */
 	public static final Color TEXT = new Color(226, 226, 226);
