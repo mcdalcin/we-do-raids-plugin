@@ -84,7 +84,7 @@ final class HostLivePostView extends JPanel
 			add(inactivityGuard.banner());
 			add(Box.createVerticalStrut(6));
 		}
-		JPanel card = card(raidColor(fields.get("raid")));
+		JPanel card = card();
 		final String spots = fields.get("spots");
 		JLabel title = new JLabel("Your " + raidLabel(fields.get("raid")) + " raid is live");
 		title.setFont(FontManager.getRunescapeSmallFont());
@@ -162,15 +162,17 @@ final class HostLivePostView extends JPanel
 		status.setForeground(error ? WdrTheme.ERROR : WdrTheme.TEXT_DIM);
 	}
 
-	/** Card edge carries the raid's own hue, so a live post speaks the same language as the feed. */
-	private static JPanel card(Color raidColor)
+	/**
+	 * No raid rail here. A rail earns its pixel in the feed by separating one call from the next;
+	 * this card stands alone above the feed, so the rail only made the host's own post look like one
+	 * more item in the list they are scrolling. The title names the raid instead.
+	 */
+	private static JPanel card()
 	{
 		JPanel card = new JPanel();
 		card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
 		card.setBackground(WdrTheme.CARD);
-		card.setBorder(BorderFactory.createCompoundBorder(
-			BorderFactory.createMatteBorder(0, 1, 0, 0, raidColor),
-			BorderFactory.createEmptyBorder(9, 10, 10, 10)));
+		card.setBorder(BorderFactory.createEmptyBorder(9, 10, 10, 10));
 		card.setAlignmentX(Component.LEFT_ALIGNMENT);
 		return card;
 	}

@@ -29,7 +29,6 @@ import com.wedoraids.ui.HtmlEscape;
 import com.wedoraids.ui.WdrTheme;
 import com.wedoraids.ui.WrappedText;
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -81,7 +80,7 @@ final class HostDraftCard extends JPanel
 		this.onChange = onChange;
 		setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 		setBackground(WdrTheme.CARD);
-		setBorder(cardBorder(selectedRaid.get().getColor()));
+		setBorder(CARD_PADDING);
 		setAlignmentX(Component.LEFT_ALIGNMENT);
 		WdrTheme.styleField(scale);
 		buildHeadline();
@@ -213,7 +212,6 @@ final class HostDraftCard extends JPanel
 
 	void setRaid(RaidType raid)
 	{
-		setBorder(cardBorder(raid.getColor()));
 		spots.setOptions(spotsOptions(raid));
 		team.setOptions(teamOptions(raid));
 		roleGroup.setVisible(raid == RaidType.TOB);
@@ -348,10 +346,10 @@ final class HostDraftCard extends JPanel
 		label.setAlignmentX(Component.LEFT_ALIGNMENT);
 	}
 
-	private static Border cardBorder(Color raidColor)
-	{
-		return BorderFactory.createCompoundBorder(
-			BorderFactory.createMatteBorder(0, 1, 0, 0, raidColor),
-			BorderFactory.createEmptyBorder(9, 10, 10, 10));
-	}
+	/**
+	 * No raid rail here. In the feed a rail separates one call from its neighbours, which is work
+	 * worth a pixel; this card has no neighbours, so the rail marked nothing while making the raid a
+	 * host is composing look like the raids they are browsing. The headline still carries the hue.
+	 */
+	private static final Border CARD_PADDING = BorderFactory.createEmptyBorder(9, 10, 10, 10);
 }

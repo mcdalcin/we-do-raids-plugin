@@ -89,14 +89,16 @@ public class WeDoRaidsPanel extends PluginPanel
 		feedChrome.setLayout(new BoxLayout(feedChrome, BoxLayout.Y_AXIS));
 		feedChrome.setOpaque(false);
 		feedChrome.setAlignmentX(Component.LEFT_ALIGNMENT);
-		feedChrome.add(Box.createVerticalStrut(6));
-		feedChrome.add(divider());
-		feedChrome.add(Box.createVerticalStrut(6));
+		// Proximity, not a rule. The old 1px separator was drawn in the same BORDER used by every
+		// control outline, so directly beneath two bordered buttons it read as one more container edge
+		// rather than a change of region, and the 10px above it against 7px below grouped nothing. The
+		// filters, the counts and the cards are one block now: a wide gap opens it, tight gaps bind it.
+		feedChrome.add(Box.createVerticalStrut(18));
 		feedChrome.add(filterBar);
 		filterBar.restoreSelection();
-		feedChrome.add(Box.createVerticalStrut(4));
+		feedChrome.add(Box.createVerticalStrut(3));
 		feedChrome.add(recruitList.countLabel());
-		feedChrome.add(Box.createVerticalStrut(6));
+		feedChrome.add(Box.createVerticalStrut(4));
 
 		content.add(demoBanner);
 		content.add(hostForm);
@@ -231,15 +233,5 @@ public class WeDoRaidsPanel extends PluginPanel
 	private void rebuildRecruitList()
 	{
 		recruitList.rebuild();
-	}
-
-	private static JPanel divider()
-	{
-		JPanel line = new JPanel();
-		line.setBackground(WdrTheme.BORDER);
-		line.setPreferredSize(new Dimension(0, 1));
-		line.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
-		line.setAlignmentX(Component.LEFT_ALIGNMENT);
-		return line;
 	}
 }
