@@ -38,14 +38,16 @@ import net.runelite.client.ui.FontManager;
 
 /**
  * A flat rectangular button in the WDR palette, matching the client's utilitarian look.
- * Three variants: PRIMARY (filled green, the one main action of a view), GHOST (plain,
- * a soft action) and DANGER (muted red, a destructive action).
+ * Five variants, ordered by how much they claim: PRIMARY (filled green, the one action a view exists
+ * to perform), ENTRY (accent edge on the bare surface, for the way into a flow), GHOST (plain, a soft
+ * action), DANGER (muted red, destructive) and QUIET (unboxed, for chrome that reveals rather than
+ * acts).
  */
 public class WdrButton extends JButton
 {
 	public enum Variant
 	{
-		PRIMARY, GHOST, DANGER
+		PRIMARY, ENTRY, GHOST, DANGER, QUIET
 	}
 
 	private Variant variant;
@@ -135,6 +137,10 @@ public class WdrButton extends JButton
 				return WdrTheme.ACCENT_INK; // light ink on the deep accent fill
 			case DANGER:
 				return WdrTheme.ERROR;
+			case ENTRY:
+				return hover ? Color.WHITE : WdrTheme.TEXT;
+			case QUIET:
+				return hover ? WdrTheme.TEXT : WdrTheme.TEXT_DIM;
 			case GHOST:
 			default:
 				return hover ? Color.WHITE : WdrTheme.TEXT;
@@ -145,15 +151,24 @@ public class WdrButton extends JButton
 	{
 		if (!isEnabled())
 		{
-			return WdrTheme.FIELD;
+			return variant == Variant.QUIET ? null : WdrTheme.FIELD;
 		}
 		final boolean pressed = getModel().isArmed() && getModel().isPressed();
 		switch (variant)
 		{
 			case PRIMARY:
 				return pressed ? WdrTheme.ACCENT_PRESSED : (hover ? WdrTheme.ACCENT_HOVER : WdrTheme.ACCENT);
+			case ENTRY:
+				// Marked by its edge, not filled. Filling this read as the view's submit and, measured, put
+				// 6466px of chroma in the chrome against 1642px across every raid hue in the feed below it,
+				// which inverts the rule that chrome never competes with raid data. The edge costs 480px.
+				return pressed ? WdrTheme.ACCENT_PRESSED : (hover ? towardSurface(WdrTheme.ACCENT) : null);
 			case DANGER:
 				return pressed ? WdrTheme.ERROR_PRESSED : (hover ? WdrTheme.ERROR_FILL : WdrTheme.FIELD);
+			case QUIET:
+				// Chrome, not an action: no box at rest, so it cannot compete with the view's submit. Hover
+				// still fills, because a control that responds to nothing does not read as clickable.
+				return hover ? WdrTheme.HOVER : null;
 			case GHOST:
 			default:
 				return pressed ? WdrTheme.BORDER : (hover ? WdrTheme.HOVER : WdrTheme.FIELD);
@@ -164,20 +179,45 @@ public class WdrButton extends JButton
 	{
 		if (!isEnabled())
 		{
-			return WdrTheme.BORDER;
+			// Rank has to survive being unavailable. A disabled primary keeps a muted trace of its accent
+			// edge, because rendering it in the same neutral edge as everything else made the submit
+			// pixel-identical to the enabled disclosure directly above it: same fill, same border, same
+			// height, differing only in ink. The one action the view exists for was the hardest to find.
+			if (variant == Variant.PRIMARY)
+			{
+				return towardSurface(WdrTheme.ACCENT_EDGE);
+			}
+			return variant == Variant.QUIET ? null : WdrTheme.BORDER;
 		}
 		switch (variant)
 		{
 			case PRIMARY:
 				return WdrTheme.ACCENT_EDGE; // carries the 3:1 boundary so the fill is free to signal state
+			case ENTRY:
+				// Neutral ink above it, because any green light enough to pass 4.5:1 on the canvas lands in
+				// the raid band around OKLCH lightness 0.76 and would read as CoX. The edge sits at 0.618,
+				// clear of it, so the accent still says "this is the way in" without borrowing a raid's hue.
+				return WdrTheme.ACCENT_EDGE;
 			case DANGER:
 				// The edge lights up on press because the fill cannot: ink caps how light the fill may go,
 				// so the press reads on the edge instead of a luminance step that would fail contrast.
 				return getModel().isArmed() && getModel().isPressed() ? WdrTheme.ERROR : WdrTheme.ERROR_FILL;
+			case QUIET:
+				return null;
 			case GHOST:
 			default:
 				return WdrTheme.BORDER;
 		}
+	}
+
+	/** Halfway from a colour to the recessed surface: keeps the hue, drops the assertion. */
+	private static Color towardSurface(Color color)
+	{
+		final Color surface = WdrTheme.FIELD;
+		return new Color(
+			(color.getRed() + surface.getRed()) / 2,
+			(color.getGreen() + surface.getGreen()) / 2,
+			(color.getBlue() + surface.getBlue()) / 2);
 	}
 
 	@Override
@@ -187,8 +227,12 @@ public class WdrButton extends JButton
 		final int w = getWidth();
 		final int h = getHeight();
 
-		g2.setColor(fillColor());
-		g2.fillRect(0, 0, w, h);
+		final Color fill = fillColor();
+		if (fill != null)
+		{
+			g2.setColor(fill);
+			g2.fillRect(0, 0, w, h);
+		}
 		final Color outline = outlineColor();
 		if (outline != null)
 		{

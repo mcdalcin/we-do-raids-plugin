@@ -61,7 +61,7 @@ final class HostMoreOptions extends JPanel
 	private final JTextField description = new JTextField();
 	private final JLabel partyHubHint = new JLabel();
 	private final JLabel layoutHint = new JLabel();
-	private final WdrButton toggle = new WdrButton("More options", WdrButton.Variant.GHOST);
+	private final WdrButton toggle = new WdrButton("More options", WdrButton.Variant.QUIET);
 	private final JPanel content = new JPanel();
 	private JPanel friendsChatRow;
 	private JPanel layoutRow;

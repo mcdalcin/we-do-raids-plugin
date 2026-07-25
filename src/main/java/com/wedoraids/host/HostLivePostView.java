@@ -166,13 +166,20 @@ final class HostLivePostView extends JPanel
 	 * No raid rail here. A rail earns its pixel in the feed by separating one call from the next;
 	 * this card stands alone above the feed, so the rail only made the host's own post look like one
 	 * more item in the list they are scrolling. The title names the raid instead.
+	 *
+	 * <p>A neutral outline replaces it, because the surface alone cannot hold the card: against the
+	 * panel canvas it measures 1.14:1, so without an edge this card dissolved into the canvas while the
+	 * railed feed cards directly beneath it stayed legible as cards. Outlined and railed now say
+	 * different things — one thing, versus one of many — which is the distinction that matters here.
 	 */
 	private static JPanel card()
 	{
 		JPanel card = new JPanel();
 		card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
 		card.setBackground(WdrTheme.CARD);
-		card.setBorder(BorderFactory.createEmptyBorder(9, 10, 10, 10));
+		card.setBorder(BorderFactory.createCompoundBorder(
+			BorderFactory.createLineBorder(WdrTheme.BORDER),
+			BorderFactory.createEmptyBorder(8, 9, 9, 9)));
 		card.setAlignmentX(Component.LEFT_ALIGNMENT);
 		return card;
 	}

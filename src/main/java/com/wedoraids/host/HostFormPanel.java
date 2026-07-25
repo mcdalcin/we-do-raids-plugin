@@ -47,7 +47,7 @@ public class HostFormPanel extends JPanel
 	}
 
 	private final HostActions actions;
-	private final WdrButton toggle = new WdrButton("Host raid", WdrButton.Variant.PRIMARY);
+	private final WdrButton toggle = new WdrButton("Host raid", WdrButton.Variant.ENTRY);
 	private final HostRaidForm raidForm;
 	private final HostLivePostPanel livePostPanel;
 	private final HostInactivityGuard inactivityGuard;
@@ -68,10 +68,7 @@ public class HostFormPanel extends JPanel
 		// Deliberately not added to this panel. The toggle is pinned as fixed chrome by the owning
 		// panel so a long feed cannot scroll hosting out of reach; only the form below it scrolls.
 		toggle.addActionListener(e -> setExpanded(!expanded));
-		// Bold and taller than the default control. At the shared small font and padding it measured the
-		// same 20px as the filter combo directly beneath it, so the panel's one action read as an input.
-		toggle.setFont(FontManager.getRunescapeBoldFont());
-		toggle.setBorder(BorderFactory.createEmptyBorder(7, 10, 7, 10));
+		applyToggleWeight();
 
 		raidForm = new HostRaidForm(dependencies, this::doSubmit, this::cancelEdit);
 		inactivityGuard = new HostInactivityGuard(liveState,
@@ -175,6 +172,24 @@ public class HostFormPanel extends JPanel
 	}
 
 	/**
+	 * Weight follows state rather than construction.
+	 *
+	 * <p>Collapsed, the toggle is bold at 30px: at the shared small font and padding it measured the
+	 * same 20px as the filter combo directly beneath it and read as an input. Expanded, that same
+	 * treatment made the control that abandons the form the heaviest thing on screen, sitting above the
+	 * submit it dwarfed, so it returns to the ordinary control size once the form is open.
+	 */
+	private void applyToggleWeight()
+	{
+		toggle.setFont(expanded
+			? FontManager.getRunescapeSmallFont()
+			: FontManager.getRunescapeBoldFont());
+		toggle.setBorder(expanded
+			? BorderFactory.createEmptyBorder(4, 10, 4, 10)
+			: BorderFactory.createEmptyBorder(7, 10, 7, 10));
+	}
+
+	/**
 	 * Package-private rather than private so the design gallery can open and close the form the way a
 	 * click does, instead of reaching through reflection to do it.
 	 */
@@ -182,9 +197,11 @@ public class HostFormPanel extends JPanel
 	{
 		this.expanded = expanded;
 		toggle.setText(expanded ? "Hide host form" : "Host raid");
-		// Collapsed, this is the only button-shaped action in the feed, since joining happens through
-		// the card links; expanded, the form's own submit takes that rank and closing is the soft move.
-		toggle.setVariant(expanded ? WdrButton.Variant.GHOST : WdrButton.Variant.PRIMARY);
+		// Collapsed, this is the way into hosting: accent-edged so a glance finds it, unfilled so it never
+		// claims the rank that belongs to the form's own submit. Expanded, the submit is on screen and
+		// this becomes the soft way back out, so it drops to a plain control and gives up its weight.
+		toggle.setVariant(expanded ? WdrButton.Variant.GHOST : WdrButton.Variant.ENTRY);
+		applyToggleWeight();
 		raidForm.setVisible(expanded && (displayedLiveFields == null || editingLive));
 		livePostPanel.setVisible(expanded && displayedLiveFields != null && !editingLive);
 		if (expanded)

@@ -350,6 +350,15 @@ final class HostDraftCard extends JPanel
 	 * No raid rail here. In the feed a rail separates one call from its neighbours, which is work
 	 * worth a pixel; this card has no neighbours, so the rail marked nothing while making the raid a
 	 * host is composing look like the raids they are browsing. The headline still carries the hue.
+	 *
+	 * <p>It does still need an edge. With the rail gone the surface was the only thing defining the
+	 * card, and against the panel canvas that step measures 1.14:1 — below seeing. At the real client
+	 * size the compose controls read as loose fields on the canvas while every railed feed card below
+	 * them read as a card. A neutral outline restores the container without restoring the list
+	 * semantics: railed means "one of many", outlined means "one thing". The padding gives the pixel
+	 * back to the outline so the card's outer measure does not change.
 	 */
-	private static final Border CARD_PADDING = BorderFactory.createEmptyBorder(9, 10, 10, 10);
+	private static final Border CARD_PADDING = BorderFactory.createCompoundBorder(
+		BorderFactory.createLineBorder(WdrTheme.BORDER),
+		BorderFactory.createEmptyBorder(8, 9, 9, 9));
 }
