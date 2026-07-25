@@ -158,7 +158,8 @@ final class HostInactivityGuard
 		banner.setMaximumSize(new Dimension(Integer.MAX_VALUE, banner.getPreferredSize().height));
 	}
 
-	private void showPrompt()
+	/** Package-private so the design gallery can render the idle prompt without waiting out the timer. */
+	void showPrompt()
 	{
 		if (liveState.isStopped() || !hasLivePost.getAsBoolean())
 		{

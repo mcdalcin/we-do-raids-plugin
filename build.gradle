@@ -47,6 +47,15 @@ tasks.register('run', JavaExec) {
     args "--developer-mode", "--debug"
 }
 
+// Renders every side-panel state for visual review. Test-source only, so it never reaches the jar.
+// `gradlew gallery` opens the window; `gradlew gallery --args="--capture 503"` writes PNGs instead.
+tasks.register('gallery', JavaExec) {
+    group = 'verification'
+    description = 'Render every side-panel state for visual review.'
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.wedoraids.DesignGallery'
+}
+
 checkstyle {
     toolVersion = '8.3'
     configDirectory = file('config/checkstyle')

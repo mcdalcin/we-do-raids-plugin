@@ -240,7 +240,8 @@ final class HostRaidForm extends JPanel
 		}
 	}
 
-	private void selectRaidTab(int index)
+	/** Package-private so the design gallery can pick a raid tab the way a click does. */
+	void selectRaidTab(int index)
 	{
 		raidChosen = true;
 		raidCombo.setSelectedIndex(index);
