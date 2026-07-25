@@ -76,17 +76,40 @@ public class WeDoRaidsPanel extends PluginPanel
 		JPanel content = new ScrollingContent();
 		content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
 		content.setOpaque(false);
+		// Filters, the raid counts and the rule between them only mean anything when there is a feed to
+		// sort, so they travel together and disappear together.
+		JPanel feedChrome = new JPanel()
+		{
+			@Override
+			public Dimension getMaximumSize()
+			{
+				return new Dimension(Integer.MAX_VALUE, getPreferredSize().height);
+			}
+		};
+		feedChrome.setLayout(new BoxLayout(feedChrome, BoxLayout.Y_AXIS));
+		feedChrome.setOpaque(false);
+		feedChrome.setAlignmentX(Component.LEFT_ALIGNMENT);
+		feedChrome.add(Box.createVerticalStrut(6));
+		feedChrome.add(divider());
+		feedChrome.add(Box.createVerticalStrut(6));
+		feedChrome.add(filterBar);
+		filterBar.restoreSelection();
+		feedChrome.add(Box.createVerticalStrut(4));
+		feedChrome.add(recruitList.countLabel());
+		feedChrome.add(Box.createVerticalStrut(6));
+
 		content.add(demoBanner);
 		content.add(hostForm);
-		content.add(Box.createVerticalStrut(6));
-		content.add(divider());
-		content.add(Box.createVerticalStrut(6));
-		content.add(filterBar);
-		filterBar.restoreSelection();
-		content.add(Box.createVerticalStrut(4));
-		content.add(recruitList.countLabel());
-		content.add(Box.createVerticalStrut(6));
+		content.add(feedChrome);
 		content.add(recruitList);
+
+		// Hosting cannot succeed while logged out, banned or unverified, and the notice already states
+		// the one thing to do next, so offering a form that only fails at the bridge is noise.
+		recruitList.onFeedAccessibleChanged(accessible ->
+		{
+			hostForm.setVisible(accessible);
+			feedChrome.setVisible(accessible);
+		});
 
 		add(header, BorderLayout.NORTH);
 		add(recruitList.scrollPane(content), BorderLayout.CENTER);

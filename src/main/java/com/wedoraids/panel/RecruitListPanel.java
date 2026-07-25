@@ -84,6 +84,7 @@ final class RecruitListPanel extends JPanel
 	private boolean verified;
 	private boolean loggedIn = true;
 	private Instant lastRebuildAt = Instant.EPOCH;
+	private Consumer<Boolean> onFeedAccessibleChanged;
 
 	RecruitListPanel(WeDoRaidsConfig config, RecruitFilterBar filterBar, BiConsumer<String, String> saveConfig,
 		IntConsumer onHopWorld, Consumer<String> onJoinHub, IntConsumer onEntryCountChanged)
@@ -159,6 +160,22 @@ final class RecruitListPanel extends JPanel
 		rebuild();
 	}
 
+	/**
+	 * Whether the feed is reachable at all. When it is not, the notice is the whole panel: filters
+	 * would sort nothing and the host form cannot post, so the surrounding chrome is hidden rather
+	 * than left present and inert.
+	 */
+	boolean feedAccessible()
+	{
+		return loggedIn && !banned && verified;
+	}
+
+	void onFeedAccessibleChanged(Consumer<Boolean> listener)
+	{
+		onFeedAccessibleChanged = listener;
+		listener.accept(feedAccessible());
+	}
+
 	void setLoggedIn(boolean loggedIn)
 	{
 		if (this.loggedIn == loggedIn)
@@ -213,6 +230,10 @@ final class RecruitListPanel extends JPanel
 		removeAll();
 		updateCounts();
 		onEntryCountChanged.accept(entries.size());
+		if (onFeedAccessibleChanged != null)
+		{
+			onFeedAccessibleChanged.accept(feedAccessible());
+		}
 
 		if (!loggedIn)
 		{
