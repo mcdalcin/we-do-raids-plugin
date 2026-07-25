@@ -169,7 +169,7 @@ final class HostLivePostView extends JPanel
 		card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
 		card.setBackground(WdrTheme.CARD);
 		card.setBorder(BorderFactory.createCompoundBorder(
-			BorderFactory.createMatteBorder(0, 3, 0, 0, raidColor),
+			BorderFactory.createMatteBorder(0, 1, 0, 0, raidColor),
 			BorderFactory.createEmptyBorder(9, 10, 10, 10)));
 		card.setAlignmentX(Component.LEFT_ALIGNMENT);
 		return card;

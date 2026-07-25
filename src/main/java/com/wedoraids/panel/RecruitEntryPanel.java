@@ -54,8 +54,12 @@ final class RecruitEntryPanel extends JPanel
 	{
 		super(new BorderLayout(0, 4));
 		setBackground(WdrTheme.CARD);
+		// A hairline rule, not a slab. The hue's job here is a scannable left rail, and rendering both
+		// alternatives settled it: a full 1px perimeter multiplied the hue's area roughly eightfold and
+		// turned a list of calls into a stack of boxes, while 3px spent width a 225px column cannot
+		// spare. 1px keeps the rail, cuts the coloured area by two thirds, and returns 2px to content.
 		setBorder(BorderFactory.createCompoundBorder(
-			BorderFactory.createMatteBorder(0, 3, 0, 0, entry.getRaidType().getColor()),
+			BorderFactory.createMatteBorder(0, 1, 0, 0, entry.getRaidType().getColor()),
 			BorderFactory.createEmptyBorder(6, 8, 6, 8)));
 		setAlignmentX(Component.LEFT_ALIGNMENT);
 		setToolTipText(buildToolTip(entry));
@@ -186,8 +190,9 @@ final class RecruitEntryPanel extends JPanel
 
 	private static JLabel buildSenderLabel(RecruitEntry entry)
 	{
-		JLabel senderLabel = new JLabel("<html>" + HtmlEscape.escape(entry.getSender() + " · " + entry.getSource())
-			+ "</html>");
+		// Source is omitted: the raid is already named, coloured and bordered on this card, and the
+		// channel is still in the card and sender tooltips for anyone who needs to know where it came from.
+		JLabel senderLabel = new JLabel("<html>" + HtmlEscape.escape(entry.getSender()) + "</html>");
 		senderLabel.setForeground(WdrTheme.TEXT_DIM);
 		senderLabel.setFont(FontManager.getRunescapeSmallFont());
 		StringBuilder who = new StringBuilder("<html><b>" + HtmlEscape.escape(entry.getSender()) + "</b>");

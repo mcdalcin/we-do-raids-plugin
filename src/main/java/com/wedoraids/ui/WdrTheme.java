@@ -89,11 +89,48 @@ public final class WdrTheme
 	public static final Color ACCENT_PRESSED = new Color(0, 103, 44);
 	/** Ink on the accent ramp. White, so the button keeps the panel's light-on-dark language. */
 	public static final Color ACCENT_INK = new Color(255, 255, 255);
+	/**
+	 * The 1px edge of the primary control, and the only part of it required to clear 3:1.
+	 *
+	 * <p>Splitting boundary from state is what makes the ramp legal. A filled control has to satisfy
+	 * two bounds at once: 3:1 against the surface it sits on, so its edge is findable, and 4.5:1 under
+	 * its own ink. Against the panel canvas those bounds leave a window only 1.12 times wide in
+	 * luminance, which is narrower than a hover step a user can actually see. A fill carrying both is
+	 * therefore either non-compliant or inert, and the previous ramp was the former: it measured 2.69:1
+	 * on the canvas, where the largest primary in the plugin sits. This edge holds the boundary at a
+	 * fixed 4.29:1 on the canvas and 4.85:1 on a card, in every state, which frees the fill beneath it
+	 * to move purely for feedback.
+	 *
+	 * <p>At OKLCH lightness 0.62 it stays below the raid band at 0.76, so the information layer remains
+	 * the only place a hue means a raid.
+	 */
+	public static final Color ACCENT_EDGE = new Color(42, 158, 82);
+	/** Keyboard focus ring. White, so a single focus treatment reads on every variant's fill. */
+	public static final Color FOCUS_RING = new Color(255, 255, 255);
 
-	/** Failure and destructive intent. The only place chroma appears outside raid identity. */
-	public static final Color ERROR = new Color(232, 92, 92);
-	/** Muted fill for destructive controls. */
+	/**
+	 * Failure and destructive intent. The only place chroma appears outside raid identity.
+	 *
+	 * <p>Lightened from its previous value, which measured 4.29:1 on the panel canvas and so missed
+	 * the 4.5:1 body minimum in the two places it actually renders there: the offline status in the
+	 * footer and the demo banner, both of which draw unfilled straight onto the canvas. At 5.28:1 it
+	 * now clears on the canvas and 5.97:1 on a card, and lightening the ink also repaired the
+	 * destructive button's hover state for free, which had been sitting at 4.00:1.
+	 *
+	 * <p>Hue 22 keeps it well clear of ToA's amber at 73, so failure never reads as a raid.
+	 */
+	public static final Color ERROR = new Color(242, 116, 116);
+	/** Hover fill for destructive controls: a red tint at twice the card's luminance. */
 	public static final Color ERROR_FILL = new Color(72, 34, 34);
+	/**
+	 * Pressed fill for destructive controls.
+	 *
+	 * <p>It deepens rather than lightens because the ink caps how light the fill may go: every
+	 * candidate above the hover step fell under 4.5:1. The press therefore reads on two channels at
+	 * once, the fill sinking and the edge lighting up to {@link #ERROR}, which is clearer than a
+	 * luminance step alone and replaces the previous neutral grey that erased the control's identity.
+	 */
+	public static final Color ERROR_PRESSED = new Color(56, 26, 26);
 
 	private WdrTheme()
 	{

@@ -134,7 +134,7 @@ final class HostInactivityGuard
 		// The countdown ends by closing the host's post, so it uses the failure role rather than a
 		// fourth chrome hue; an amber warning would read as ToA in a panel full of raid colours.
 		banner.setBorder(BorderFactory.createCompoundBorder(
-			BorderFactory.createMatteBorder(0, 3, 0, 0, WdrTheme.ERROR),
+			BorderFactory.createMatteBorder(0, 1, 0, 0, WdrTheme.ERROR),
 			BorderFactory.createEmptyBorder(8, 10, 10, 10)));
 		banner.setAlignmentX(Component.LEFT_ALIGNMENT);
 

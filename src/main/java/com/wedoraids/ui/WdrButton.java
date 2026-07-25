@@ -28,6 +28,8 @@ import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import javax.swing.BorderFactory;
@@ -79,10 +81,38 @@ public class WdrButton extends JButton
 				repaint();
 			}
 		});
+		addFocusListener(new FocusAdapter()
+		{
+			@Override
+			public void focusGained(FocusEvent e)
+			{
+				repaint();
+			}
+
+			@Override
+			public void focusLost(FocusEvent e)
+			{
+				repaint();
+			}
+		});
+	}
+
+	@Override
+	public void setEnabled(boolean enabled)
+	{
+		super.setEnabled(enabled);
+		setCursor(new Cursor(enabled ? Cursor.HAND_CURSOR : Cursor.DEFAULT_CURSOR));
+		setForeground(textColor());
+		repaint();
 	}
 
 	private Color textColor()
 	{
+		if (!isEnabled())
+		{
+			// A disabled control has to read as unavailable, not as a soft ghost action.
+			return WdrTheme.TEXT_MUTED;
+		}
 		switch (variant)
 		{
 			case PRIMARY:
@@ -97,13 +127,17 @@ public class WdrButton extends JButton
 
 	private Color fillColor()
 	{
+		if (!isEnabled())
+		{
+			return WdrTheme.FIELD;
+		}
 		final boolean pressed = getModel().isArmed() && getModel().isPressed();
 		switch (variant)
 		{
 			case PRIMARY:
 				return pressed ? WdrTheme.ACCENT_PRESSED : (hover ? WdrTheme.ACCENT_HOVER : WdrTheme.ACCENT);
 			case DANGER:
-				return pressed ? WdrTheme.BORDER : (hover ? WdrTheme.ERROR_FILL : WdrTheme.FIELD);
+				return pressed ? WdrTheme.ERROR_PRESSED : (hover ? WdrTheme.ERROR_FILL : WdrTheme.FIELD);
 			case GHOST:
 			default:
 				return pressed ? WdrTheme.BORDER : (hover ? WdrTheme.HOVER : WdrTheme.FIELD);
@@ -112,12 +146,18 @@ public class WdrButton extends JButton
 
 	private Color outlineColor()
 	{
+		if (!isEnabled())
+		{
+			return WdrTheme.BORDER;
+		}
 		switch (variant)
 		{
 			case PRIMARY:
-				return null;
+				return WdrTheme.ACCENT_EDGE; // carries the 3:1 boundary so the fill is free to signal state
 			case DANGER:
-				return WdrTheme.ERROR_FILL;
+				// The edge lights up on press because the fill cannot: ink caps how light the fill may go,
+				// so the press reads on the edge instead of a luminance step that would fail contrast.
+				return getModel().isArmed() && getModel().isPressed() ? WdrTheme.ERROR : WdrTheme.ERROR_FILL;
 			case GHOST:
 			default:
 				return WdrTheme.BORDER;
@@ -138,6 +178,13 @@ public class WdrButton extends JButton
 		{
 			g2.setColor(outline);
 			g2.drawRect(0, 0, w - 1, h - 1);
+		}
+		if (isFocusOwner())
+		{
+			// setFocusPainted(false) drops the look and feel's own ring, so paint one: WCAG 2.4.7 is AA,
+			// and the key field in the verification notice is reached by keyboard before this button is.
+			g2.setColor(WdrTheme.FOCUS_RING);
+			g2.drawRect(2, 2, w - 5, h - 5);
 		}
 		g2.dispose();
 		super.paintComponent(g);

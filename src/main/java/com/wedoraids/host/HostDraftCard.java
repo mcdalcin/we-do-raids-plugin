@@ -483,7 +483,7 @@ final class HostDraftCard extends JPanel
 	private static Border cardBorder(Color raidColor)
 	{
 		return BorderFactory.createCompoundBorder(
-			BorderFactory.createMatteBorder(0, 3, 0, 0, raidColor),
+			BorderFactory.createMatteBorder(0, 1, 0, 0, raidColor),
 			BorderFactory.createEmptyBorder(9, 10, 10, 10));
 	}
 }
