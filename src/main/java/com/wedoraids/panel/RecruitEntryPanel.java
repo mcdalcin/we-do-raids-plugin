@@ -26,6 +26,7 @@ package com.wedoraids.panel;
 
 import com.wedoraids.feed.RecruitDisplay;
 import com.wedoraids.feed.RecruitEntry;
+import com.wedoraids.ui.HtmlEscape;
 import com.wedoraids.ui.WdrTheme;
 import java.awt.BorderLayout;
 import java.awt.Component;
@@ -75,7 +76,7 @@ final class RecruitEntryPanel extends JPanel
 
 		StringBuilder detail = buildDetail(entry);
 		JLabel messageLabel = new JLabel("<html><body style='width:150px'>"
-			+ escapeHtml(entry.getMessage()) + "</body></html>");
+			+ HtmlEscape.escape(entry.getMessage()) + "</body></html>");
 		messageLabel.setForeground(WdrTheme.TEXT_DIM);
 		messageLabel.setFont(FontManager.getRunescapeSmallFont());
 
@@ -112,13 +113,13 @@ final class RecruitEntryPanel extends JPanel
 
 	private static String buildToolTip(RecruitEntry entry)
 	{
-		StringBuilder tip = new StringBuilder("<html><b>" + escapeHtml(entry.getSender()) + "</b> ("
-			+ escapeHtml(entry.getSource()) + ")");
+		StringBuilder tip = new StringBuilder("<html><b>" + HtmlEscape.escape(entry.getSender()) + "</b> ("
+			+ HtmlEscape.escape(entry.getSource()) + ")");
 		if (entry.getHost() != null)
 		{
-			tip.append("<br>Party hub: ").append(escapeHtml(entry.getHost()));
+			tip.append("<br>Party hub: ").append(HtmlEscape.escape(entry.getHost()));
 		}
-		return tip.append("<br>").append(escapeHtml(entry.getMessage())).append("</html>").toString();
+		return tip.append("<br>").append(HtmlEscape.escape(entry.getMessage())).append("</html>").toString();
 	}
 
 	private static JLabel buildWorldLabel(RecruitEntry entry, IntConsumer onHopWorld)
@@ -179,11 +180,12 @@ final class RecruitEntryPanel extends JPanel
 
 	private static JLabel buildSenderLabel(RecruitEntry entry)
 	{
-		JLabel senderLabel = new JLabel("<html>" + escapeHtml(entry.getSender() + " · " + entry.getSource()) + "</html>");
+		JLabel senderLabel = new JLabel("<html>" + HtmlEscape.escape(entry.getSender() + " · " + entry.getSource())
+			+ "</html>");
 		senderLabel.setForeground(WdrTheme.TEXT);
 		senderLabel.setFont(FontManager.getRunescapeSmallFont());
-		StringBuilder who = new StringBuilder("<html><b>" + escapeHtml(entry.getSender()) + "</b>");
-		who.append("<br>").append(escapeHtml(entry.getRaidType().getDisplayName())).append(" KC: ")
+		StringBuilder who = new StringBuilder("<html><b>" + HtmlEscape.escape(entry.getSender()) + "</b>");
+		who.append("<br>").append(HtmlEscape.escape(entry.getRaidType().getDisplayName())).append(" KC: ")
 			.append(entry.getKc() > 0 ? String.valueOf(entry.getKc()) : "unknown");
 		final String personTier = RecruitDisplay.wdrTierNumber(entry.getRaidType(), entry.getKc());
 		if (personTier != null)
@@ -206,7 +208,7 @@ final class RecruitEntryPanel extends JPanel
 		hubLabel.setForeground(WdrTheme.GREEN);
 		hubLabel.setFont(FontManager.getRunescapeSmallFont());
 		hubLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-		hubLabel.setToolTipText("Join party \"" + escapeHtml(hub) + "\" in the RuneLite Party plugin");
+		hubLabel.setToolTipText("Join party \"" + HtmlEscape.escape(hub) + "\" in the RuneLite Party plugin");
 		hubLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		hubLabel.addMouseListener(new MouseAdapter()
 		{
@@ -259,8 +261,4 @@ final class RecruitEntryPanel extends JPanel
 		return (minutes / 60) + "h " + (minutes % 60) + "m ago";
 	}
 
-	private static String escapeHtml(String value)
-	{
-		return value.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
-	}
 }

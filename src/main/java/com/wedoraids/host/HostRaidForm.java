@@ -25,6 +25,7 @@
 package com.wedoraids.host;
 
 import com.wedoraids.feed.RaidType;
+import com.wedoraids.ui.HtmlEscape;
 import com.wedoraids.ui.WdrTheme;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -133,7 +134,7 @@ final class HostRaidForm extends JPanel
 
 	void setStatus(String message, boolean error)
 	{
-		status.setText("<html><body style='width:180px'>" + escapeHtml(message) + "</body></html>");
+		status.setText("<html><body style='width:180px'>" + HtmlEscape.escape(message) + "</body></html>");
 		status.setForeground(error ? WdrTheme.ERROR : WdrTheme.TEXT_DIM);
 	}
 
@@ -220,8 +221,4 @@ final class HostRaidForm extends JPanel
 		}
 	}
 
-	private static String escapeHtml(String value)
-	{
-		return value == null ? "" : value.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
-	}
 }

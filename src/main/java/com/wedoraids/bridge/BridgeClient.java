@@ -76,11 +76,11 @@ public final class BridgeClient
 		public int toa;
 	}
 
-	public static final class HostResult
+	private static final class HostResult
 	{
-		boolean ok;
-		public String messageId;
-		String error;
+		private boolean ok;
+		private String messageId;
+		private String error;
 	}
 
 	static final class BanCheckResult
@@ -245,8 +245,25 @@ public final class BridgeClient
 		});
 	}
 
-	public void postAction(String endpoint, Map<String, String> fields, String okMessage,
-		Consumer<String> status, BiConsumer<Long, HostResult> onOk)
+	public void host(Map<String, String> fields, Consumer<String> status,
+		BiConsumer<Long, String> onHosted)
+	{
+		postAction("host", fields, "Posted to Discord", status, onHosted);
+	}
+
+	public void update(Map<String, String> fields, Consumer<String> status)
+	{
+		postAction("update", fields, "Updated", status, null);
+	}
+
+	public void close(Map<String, String> fields, Consumer<String> status, LongConsumer onClosed)
+	{
+		postAction("close", fields, "Closed", status,
+			(generation, messageId) -> onClosed.accept(generation));
+	}
+
+	private void postAction(String endpoint, Map<String, String> fields, String okMessage,
+		Consumer<String> status, BiConsumer<Long, String> onOk)
 	{
 		final long generation = identityGeneration.getAsLong();
 		final String viewerName = viewer.get();
@@ -322,7 +339,7 @@ public final class BridgeClient
 						reply.accept(okMessage);
 						if (onOk != null)
 						{
-							onOk.accept(generation, result);
+							onOk.accept(generation, result.messageId);
 						}
 					}
 					else if (result != null && result.error != null)

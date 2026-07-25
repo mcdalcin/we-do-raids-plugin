@@ -31,6 +31,7 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
@@ -48,6 +49,7 @@ final class HostRaidFormFields extends JPanel
 {
 	private final HostDependencies dependencies;
 	private final Supplier<RaidType> selectedRaid;
+	private final BiConsumer<String, Boolean> status;
 	private final JComboBox<String> tier = new JComboBox<>(RaidType.TOB.getTiers());
 	private final JTextField world = new JTextField();
 	private final JComboBox<String> spots = new JComboBox<>(new String[]{"", "+1", "+2", "+3", "+4"});
@@ -62,7 +64,6 @@ final class HostRaidFormFields extends JPanel
 	private final JTextField layout = new JTextField();
 	private final JTextField partyHub = new JTextField();
 	private final JTextField description = new JTextField();
-	private final HostRaidDraft draft;
 	private JPanel roleRow;
 	private JPanel scaleFcRow;
 	private JPanel layoutRow;
@@ -72,8 +73,7 @@ final class HostRaidFormFields extends JPanel
 	{
 		this.dependencies = dependencies;
 		this.selectedRaid = selectedRaid;
-		this.draft = new HostRaidDraft(dependencies, selectedRaid, status, tier, world, spots, team,
-			mdps, rdps, nfrz, sfrz, roles, scale, fc, layout, partyHub, description, this::layoutApplies);
+		this.status = status;
 		setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 		setOpaque(false);
 		setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -150,7 +150,107 @@ final class HostRaidFormFields extends JPanel
 
 	Map<String, String> collectValidatedFields()
 	{
-		return draft.collect();
+		final Map<String, String> fields = new LinkedHashMap<>();
+		fields.put("raid", selectedRaid.get().name());
+		if (tier.getSelectedItem() != null)
+		{
+			fields.put("tier", (String) tier.getSelectedItem());
+		}
+		if (!collectWorld(fields) || !collectCox(fields))
+		{
+			return null;
+		}
+		putIfPresent(fields, "size", (String) team.getSelectedItem());
+		putIfPresent(fields, "spots", (String) spots.getSelectedItem());
+		collectRoles(fields);
+		if (layoutApplies())
+		{
+			String value = layout.getText().trim();
+			if (value.isEmpty() && dependencies.coxLayout().get() != null)
+			{
+				value = dependencies.coxLayout().get().trim();
+			}
+			putIfPresent(fields, "layout", value);
+		}
+		putIfPresent(fields, "partyHub", partyHub.getText().trim());
+		putIfPresent(fields, "desc", description.getText().trim());
+		return fields;
+	}
+
+	private boolean collectWorld(Map<String, String> fields)
+	{
+		final String value = world.getText().trim();
+		if (value.isEmpty())
+		{
+			return true;
+		}
+		if (!value.matches("\\d{1,3}"))
+		{
+			status.accept("World must be a number.", true);
+			return false;
+		}
+		final String blocked = dependencies.worldBlockReason().apply(Integer.parseInt(value));
+		if (blocked != null)
+		{
+			status.accept("W" + value + " is " + blocked + ", pick a different world.", true);
+			return false;
+		}
+		fields.put("world", value);
+		return true;
+	}
+
+	private boolean collectCox(Map<String, String> fields)
+	{
+		if (selectedRaid.get() != RaidType.COX)
+		{
+			return true;
+		}
+		final String value = scale.getText().trim();
+		if (!value.isEmpty())
+		{
+			if (!value.matches("\\d{1,3}") || Integer.parseInt(value) > 100)
+			{
+				status.accept("Scale must be 0-100.", true);
+				return false;
+			}
+			fields.put("scale", value);
+		}
+		putIfPresent(fields, "fc", fc.getText().trim());
+		return true;
+	}
+
+	private void collectRoles(Map<String, String> fields)
+	{
+		final List<String> values = new ArrayList<>();
+		if (selectedRaid.get() == RaidType.TOB)
+		{
+			final JCheckBox[] roleChecks = {mdps, rdps, nfrz, sfrz};
+			final String[] names = {"mdps", "rdps", "nfrz", "sfrz"};
+			for (int index = 0; index < roleChecks.length; index++)
+			{
+				if (roleChecks[index].isSelected())
+				{
+					values.add(names[index]);
+				}
+			}
+		}
+		final String extra = roles.getText().trim();
+		if (!extra.isEmpty())
+		{
+			values.add(extra);
+		}
+		if (!values.isEmpty())
+		{
+			fields.put("roles", String.join(", ", values));
+		}
+	}
+
+	private static void putIfPresent(Map<String, String> fields, String key, String value)
+	{
+		if (value != null && !value.isEmpty())
+		{
+			fields.put(key, value);
+		}
 	}
 
 	void populate(Map<String, String> values)

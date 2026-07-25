@@ -26,10 +26,10 @@ package com.wedoraids.host;
 
 import com.wedoraids.WeDoRaidsConfig;
 import com.wedoraids.bridge.BridgeClient;
-import com.wedoraids.panel.WeDoRaidsPanel;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.LongConsumer;
 import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 import net.runelite.api.ChatMessageType;
@@ -48,14 +48,12 @@ public final class HostInteractionController
 	private final Notifier notifier;
 	private final PartyService partyService;
 	private final LongSupplier identityGeneration;
-	private final Supplier<String> viewer;
-	private final Consumer<String> hostLiveOwner;
-	private final BiConsumer<Long, Consumer<WeDoRaidsPanel>> panelUpdater;
+	private final BiConsumer<Long, String> onHosted;
+	private final LongConsumer onClosed;
 
 	public HostInteractionController(WeDoRaidsConfig config, Supplier<BridgeClient> bridgeClient, Client client,
 		ClientThread clientThread, Notifier notifier, PartyService partyService, LongSupplier identityGeneration,
-		Supplier<String> viewer, Consumer<String> hostLiveOwner,
-		BiConsumer<Long, Consumer<WeDoRaidsPanel>> panelUpdater)
+		BiConsumer<Long, String> onHosted, LongConsumer onClosed)
 	{
 		this.config = config;
 		this.bridgeClient = bridgeClient;
@@ -64,20 +62,18 @@ public final class HostInteractionController
 		this.notifier = notifier;
 		this.partyService = partyService;
 		this.identityGeneration = identityGeneration;
-		this.viewer = viewer;
-		this.hostLiveOwner = hostLiveOwner;
-		this.panelUpdater = panelUpdater;
+		this.onHosted = onHosted;
+		this.onClosed = onClosed;
 	}
 
 	public void hostRaid(Map<String, String> fields, Consumer<String> status)
 	{
 		final String partyHub = fields.get("partyHub");
-		bridgeClient.get().postAction("host", fields, "Posted to Discord", status, (generation, result) ->
+		bridgeClient.get().host(fields, status, (generation, messageId) ->
 		{
-			if (result.messageId != null)
+			if (messageId != null)
 			{
-				hostLiveOwner.accept(viewer.get());
-				panelUpdater.accept(generation, panel -> panel.enterHostLive(result.messageId));
+				onHosted.accept(generation, messageId);
 			}
 			if (config.autoPartyHub() && partyHub != null && !partyHub.isEmpty())
 			{
@@ -94,16 +90,12 @@ public final class HostInteractionController
 
 	public void updatePost(Map<String, String> fields, Consumer<String> status)
 	{
-		bridgeClient.get().postAction("update", fields, "Updated", status, null);
+		bridgeClient.get().update(fields, status);
 	}
 
 	public void closePost(Map<String, String> fields, Consumer<String> status)
 	{
-		bridgeClient.get().postAction("close", fields, "Closed", status, (generation, result) ->
-		{
-			hostLiveOwner.accept(null);
-			panelUpdater.accept(generation, WeDoRaidsPanel::exitHostLive);
-		});
+		bridgeClient.get().close(fields, status, onClosed);
 	}
 
 	public void warnHostIdle()
