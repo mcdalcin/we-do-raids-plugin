@@ -24,15 +24,16 @@
  */
 package com.wedoraids.host;
 
-import com.wedoraids.ui.WdrTheme;
+import com.wedoraids.ui.WdrButton;
 import java.awt.BorderLayout;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Consumer;
+import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
-import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import net.runelite.client.ui.FontManager;
 
 public class HostFormPanel extends JPanel
 {
@@ -46,7 +47,7 @@ public class HostFormPanel extends JPanel
 	}
 
 	private final HostActions actions;
-	private final JButton toggle = new JButton("Host raid");
+	private final WdrButton toggle = new WdrButton("Host raid", WdrButton.Variant.PRIMARY);
 	private final HostRaidForm raidForm;
 	private final HostLivePostPanel livePostPanel;
 	private final HostInactivityGuard inactivityGuard;
@@ -64,9 +65,13 @@ public class HostFormPanel extends JPanel
 		setLayout(new BorderLayout(0, 4));
 		setOpaque(false);
 
-		WdrTheme.styleButton(toggle);
+		// Deliberately not added to this panel. The toggle is pinned as fixed chrome by the owning
+		// panel so a long feed cannot scroll hosting out of reach; only the form below it scrolls.
 		toggle.addActionListener(e -> setExpanded(!expanded));
-		add(toggle, BorderLayout.NORTH);
+		// Bold and taller than the default control. At the shared small font and padding it measured the
+		// same 20px as the filter combo directly beneath it, so the panel's one action read as an input.
+		toggle.setFont(FontManager.getRunescapeBoldFont());
+		toggle.setBorder(BorderFactory.createEmptyBorder(7, 10, 7, 10));
 
 		raidForm = new HostRaidForm(dependencies, this::doSubmit, this::cancelEdit);
 		inactivityGuard = new HostInactivityGuard(liveState,
@@ -127,10 +132,21 @@ public class HostFormPanel extends JPanel
 		return HostRaidForm.generatePartyHub();
 	}
 
+	/**
+	 * The disclosure control, handed to the owning panel so it can be pinned outside the scroll area.
+	 */
+	public WdrButton toggleButton()
+	{
+		return toggle;
+	}
+
 	private void setExpanded(boolean expanded)
 	{
 		this.expanded = expanded;
 		toggle.setText(expanded ? "Hide host form" : "Host raid");
+		// Collapsed, this is the only button-shaped action in the feed, since joining happens through
+		// the card links; expanded, the form's own submit takes that rank and closing is the soft move.
+		toggle.setVariant(expanded ? WdrButton.Variant.GHOST : WdrButton.Variant.PRIMARY);
 		raidForm.setVisible(expanded && (displayedLiveFields == null || editingLive));
 		livePostPanel.setVisible(expanded && displayedLiveFields != null && !editingLive);
 		if (expanded)

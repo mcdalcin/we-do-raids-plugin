@@ -48,7 +48,7 @@ public class WdrButton extends JButton
 		PRIMARY, GHOST, DANGER
 	}
 
-	private final Variant variant;
+	private Variant variant;
 	private boolean hover;
 
 	public WdrButton(String text, Variant variant)
@@ -95,6 +95,22 @@ public class WdrButton extends JButton
 				repaint();
 			}
 		});
+	}
+
+	/**
+	 * Swaps the button's rank. A control that both opens and closes a view is the main action in one
+	 * of those states and a secondary one in the other, so its variant belongs to the state rather
+	 * than to construction, and the view keeps exactly one primary either way.
+	 */
+	public void setVariant(Variant variant)
+	{
+		if (this.variant == variant)
+		{
+			return;
+		}
+		this.variant = variant;
+		setForeground(textColor());
+		repaint();
 	}
 
 	@Override

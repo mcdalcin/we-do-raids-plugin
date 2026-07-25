@@ -108,10 +108,19 @@ public class WeDoRaidsPanel extends PluginPanel
 		recruitList.onFeedAccessibleChanged(accessible ->
 		{
 			hostForm.setVisible(accessible);
+			hostForm.toggleButton().setVisible(accessible);
 			feedChrome.setVisible(accessible);
 		});
 
-		add(header, BorderLayout.NORTH);
+		// The toggle is pinned rather than scrolled. It is the only button-shaped action in the feed,
+		// and as the top item of the scroll content it used to be the first thing a long feed pushed
+		// out of sight, which is exactly when someone decides to start their own raid instead.
+		JPanel topChrome = new JPanel(new BorderLayout(0, 8));
+		topChrome.setOpaque(false);
+		topChrome.add(header, BorderLayout.NORTH);
+		topChrome.add(hostForm.toggleButton(), BorderLayout.CENTER);
+
+		add(topChrome, BorderLayout.NORTH);
 		add(recruitList.scrollPane(content), BorderLayout.CENTER);
 		add(header.statusBar(), BorderLayout.SOUTH);
 		recruitList.rebuild();
