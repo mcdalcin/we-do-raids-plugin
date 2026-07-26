@@ -36,16 +36,12 @@ import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 
 /**
- * We Do Raids palette, built as roles rather than swatches. One role, one meaning.
+ * We Do Raids palette, organised by role rather than by swatch: one role, one meaning.
  *
- * <p>Surfaces and borders come from RuneLite's native {@link ColorScheme} so the panel sits in
- * the client rather than on top of it. Saturated colour is reserved almost entirely for raid
- * identity: the three raid hues are the panel's data dimension and are the only chroma a user
- * sees in a normal feed. Chrome (actions, links, status) is deliberately neutral so it never
- * competes with, or is mistaken for, raid data. Failure states are the one exception.
- *
- * <p>Raid hues live on {@link com.wedoraids.feed.RaidType}; they are equalised in perceptual
- * lightness (OKLCH L=0.76) so no raid outranks another by colour weight alone.
+ * <p>Surfaces and borders come from RuneLite's {@link ColorScheme} so the panel sits in the client
+ * rather than on top of it. Chroma belongs to raid identity — the hues on
+ * {@link com.wedoraids.feed.RaidType}, equalised at OKLCH lightness 0.76 so no raid outranks
+ * another. Chrome stays neutral so it is never mistaken for raid data; failure is the one exception.
  */
 public final class WdrTheme
 {
@@ -53,15 +49,15 @@ public final class WdrTheme
 	public static final Color BACKGROUND = ColorScheme.DARK_GRAY_COLOR;
 	/** Recessed surface for cards and notices, one step below the canvas. */
 	public static final Color CARD = ColorScheme.DARKER_GRAY_COLOR;
+	/** Input and control fill; the same step as {@link #CARD}. */
 	public static final Color FIELD = ColorScheme.DARKER_GRAY_COLOR;
+	/** Hover step for neutral controls. */
 	public static final Color HOVER = ColorScheme.DARK_GRAY_HOVER_COLOR;
+	/** Neutral outline for cards, fields and controls. */
 	public static final Color BORDER = ColorScheme.MEDIUM_GRAY_COLOR;
 	/**
-	 * The raised fill of a chosen toggle chip. A selected chip has to carry its state on its largest
-	 * surface, not only a 1px outline: {@link #FIELD} and {@link #HOVER} sit at 1.06:1, so the fill
-	 * encoded almost nothing. This neutral measures 1.82:1 against the card/field surface it replaces,
-	 * clearing the 1.5:1 floor for a state a user reads at a glance, while primary ink stays at 7.06:1
-	 * above it. Neutral by construction: raid hue is reserved for raid identity, never for chip state.
+	 * Raised fill of a chosen toggle chip. Neutral by rule — raid hue means raid identity — and held
+	 * at 1.82:1 against the {@link #FIELD} surface it replaces so the state reads at a glance.
 	 */
 	public static final Color CHIP_CHOSEN = new Color(72, 72, 72);
 
@@ -73,25 +69,12 @@ public final class WdrTheme
 	public static final Color TEXT_MUTED = new Color(146, 146, 146);
 
 	/**
-	 * The fill of the one primary action in a view: the WDR green, deepened into a surface.
+	 * Fill of the one primary action in a view: the WDR green, deepened into a surface.
 	 *
-	 * <p>A primary control on a dark panel earns its rank through chroma, not brightness. The
-	 * previous neutral fills tried to earn it through brightness and failed twice over: near-white
-	 * glared at 62 times the card's luminance, and the softened mid-grey still sat at 36 times while
-	 * carrying no chroma at all, which made it read as a disabled control and forced dark ink,
-	 * inverting the panel's dark-surface/light-text language. Measured, the dark-tool primaries this
-	 * resembles sit near 14 times: GitHub's green and Discord's blurple both do. This ramp lands at
-	 * 11 to 14 times with white ink above it, so the button matches the panel instead of fighting it.
-	 *
-	 * <p>Green is the WDR brand, and using it here does not break the rule that hue means raid.
-	 * That rule governs the information layer, where a raid's hue appears as light text and a card
-	 * edge around OKLCH lightness 0.76. This is a control, filled, at lightness 0.50: a different
-	 * channel and a different band, never rendered inside a raid card. The alternatives were worse.
-	 * Amber and purple sit closer to ToA and ToB in role as well as hue, red is spoken for by
-	 * failure, and blue is the generic tech-tool accent PRODUCT.md lists as an anti-reference.
-	 *
-	 * <p>Sized from the hover step down: hover is the lightest state, so it sets the ceiling that
-	 * keeps white ink past 4.5:1 everywhere.
+	 * <p>A primary control on a dark panel earns rank through chroma, not brightness; this ramp sits
+	 * at 11-14x the card's luminance under white ink. Green is brand, not data: raid hues render as
+	 * light text and card edges near OKLCH lightness 0.76, while this is a filled control at 0.50 and
+	 * never appears inside a raid card. Sized from {@link #ACCENT_HOVER} down, the lightest state.
 	 */
 	public static final Color ACCENT = new Color(0, 122, 53);
 	/** Hover step. The lightest state, and still 4.64:1 under white ink. */
@@ -103,53 +86,37 @@ public final class WdrTheme
 	/**
 	 * The 1px edge of the primary control, and the only part of it required to clear 3:1.
 	 *
-	 * <p>Splitting boundary from state is what makes the ramp legal. A filled control has to satisfy
-	 * two bounds at once: 3:1 against the surface it sits on, so its edge is findable, and 4.5:1 under
-	 * its own ink. Against the panel canvas those bounds leave a window only 1.12 times wide in
-	 * luminance, which is narrower than a hover step a user can actually see. A fill carrying both is
-	 * therefore either non-compliant or inert, and the previous ramp was the former: it measured 2.69:1
-	 * on the canvas, where the largest primary in the plugin sits. This edge holds the boundary at a
-	 * fixed 4.29:1 on the canvas and 4.85:1 on a card, in every state, which frees the fill beneath it
-	 * to move purely for feedback.
-	 *
-	 * <p>At OKLCH lightness 0.62 it stays below the raid band at 0.76, so the information layer remains
-	 * the only place a hue means a raid.
+	 * <p>Separating boundary from state is what makes the ramp legal: one fill cannot hold both 3:1
+	 * against its surface and 4.5:1 under its own ink without going inert. The edge pins the boundary
+	 * at 4.29:1 on the canvas, freeing the fill beneath it to move purely for feedback. At OKLCH
+	 * lightness 0.62 it stays below the raid band at 0.76.
 	 */
 	public static final Color ACCENT_EDGE = new Color(42, 158, 82);
 	/** Keyboard focus ring. White, so a single focus treatment reads on every variant's fill. */
 	public static final Color FOCUS_RING = new Color(255, 255, 255);
 
 	/**
-	 * Failure and destructive intent. The only place chroma appears outside raid identity.
+	 * Failure and destructive intent: the only chroma outside raid identity.
 	 *
-	 * <p>Lightened from its previous value, which measured 4.29:1 on the panel canvas and so missed
-	 * the 4.5:1 body minimum in the two places it actually renders there: the offline status in the
-	 * footer and the demo banner, both of which draw unfilled straight onto the canvas. At 5.28:1 it
-	 * now clears on the canvas and 5.97:1 on a card, and lightening the ink also repaired the
-	 * destructive button's hover state for free, which had been sitting at 4.00:1.
-	 *
-	 * <p>Hue 22 keeps it well clear of ToA's amber at 73, so failure never reads as a raid.
+	 * <p>Renders unfilled straight onto the canvas in the footer status and demo banner, so it has to
+	 * clear 4.5:1 there; it measures 5.28:1 on the canvas and 5.97:1 on a card. Hue 22 keeps it clear
+	 * of ToA's amber at 73, so failure never reads as a raid.
 	 */
 	public static final Color ERROR = new Color(242, 116, 116);
 	/** Hover fill for destructive controls: a red tint at twice the card's luminance. */
 	public static final Color ERROR_FILL = new Color(72, 34, 34);
 	/**
-	 * Pressed fill for destructive controls.
-	 *
-	 * <p>It deepens rather than lightens because the ink caps how light the fill may go: every
-	 * candidate above the hover step fell under 4.5:1. The press therefore reads on two channels at
-	 * once, the fill sinking and the edge lighting up to {@link #ERROR}, which is clearer than a
-	 * luminance step alone and replaces the previous neutral grey that erased the control's identity.
+	 * Pressed fill for destructive controls. Deepens rather than lightens, because any fill above the
+	 * hover step drops its ink under 4.5:1; the press instead reads on two channels at once, the fill
+	 * sinking while the edge lights up to {@link #ERROR}.
 	 */
 	public static final Color ERROR_PRESSED = new Color(56, 26, 26);
 
 	/**
 	 * The edge and inset that make a panel read as one card rather than one of many.
 	 *
-	 * <p>A surface step alone cannot hold a card: against the panel canvas {@link #CARD} measures
-	 * 1.14:1, below seeing, so an unbordered card dissolves into the canvas while the railed feed
-	 * cards beside it stay legible. A neutral outline restores the container without borrowing the
-	 * feed's list semantics — railed means "one of many", outlined means "one thing".
+	 * <p>A surface step alone cannot hold a card: {@link #CARD} measures 1.14:1 against the canvas, so
+	 * an unbordered card dissolves into it. Outlined means "one thing", railed means "one of many".
 	 */
 	public static final Border CARD_BORDER = BorderFactory.createCompoundBorder(
 		BorderFactory.createLineBorder(BORDER),
@@ -182,12 +149,9 @@ public final class WdrTheme
 	/**
 	 * Marks a field whose value failed validation, and clears itself on the first edit.
 	 *
-	 * <p>The status line that names the failure renders under the submit button, which can be five
-	 * fields and a fold away from the field it names — measured, the World field and its error
-	 * cannot share a 503px viewport. The edge is the association the message alone cannot carry:
-	 * ERROR chroma already means failure and nothing else in this panel, and a field border is the
-	 * one place that hue was not yet spoken for. It restores {@link #styleField}'s border the
-	 * moment the host types, because a mark that outlives the mistake becomes noise.
+	 * <p>The status line naming the failure can sit a fold away from the field it names, so the border
+	 * carries an association the message alone cannot. It restores {@link #styleField}'s border on the
+	 * first keystroke, because a mark that outlives the mistake becomes noise.
 	 */
 	public static void flagInvalid(JTextComponent f)
 	{

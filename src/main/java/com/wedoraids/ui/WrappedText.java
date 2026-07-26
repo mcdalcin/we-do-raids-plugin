@@ -24,27 +24,16 @@
  */
 package com.wedoraids.ui;
 
-import net.runelite.client.ui.PluginPanel;
 
 /**
- * The panel's text measures, in one place.
+ * HTML line-wrap widths for the panel's text, in one place.
  *
- * <p>Swing has no line-wrapping label, so wrapped copy is rendered as HTML with an explicit pixel
- * width. Those widths were previously hand-written per call site, which meant the panel had four
- * different line lengths for the same kind of text.
+ * <p>Swing has no wrapping label, so wrapped copy is rendered as HTML with an explicit pixel
+ * width. Declaring a body width alone is not enough: the HTML renderer ignores it unless the
+ * label's own maximum width is also capped. Both must be set together by the consumer.
  *
- * <p>The values are measured against the rendered panel rather than derived from
- * {@link PluginPanel#PANEL_WIDTH}, because Swing's HTML renderer does not treat the declared body
- * width as a wrap boundary. Left uncapped, a status label is granted the full panel width and the
- * HTML fills it, so the declared width has no effect and the widest line inks to the panel edge:
- * measured, a 178px body still inked to column 214 on the 225px panel (content edge 215), clipping
- * the tail. Reducing the body width alone did nothing (165px still inked to 213). The declared
- * width only takes effect once the label's own maximum width is capped; the consumer must do both.
- *
- * <p>{@link #PANEL} of 150 was measured by rendering a worst-case status in the design gallery: at a
- * 150px body the copy wraps to two lines, and with the status label capped at 190px the widest line
- * inks to column 199, a clear right margin inside the 205px measure. Keep these conservative, and
- * re-check with a render if the panel's padding changes.
+ * <p>{@link #PANEL} of 150 was measured against a worst-case status string in the design
+ * gallery. Re-check with a render if the panel's padding changes.
  */
 public final class WrappedText
 {

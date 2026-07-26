@@ -33,17 +33,13 @@ import java.awt.LayoutManager;
 /**
  * A two-column grid that keeps both rails flush.
  *
- * <p>{@link java.awt.GridLayout} floors {@code (width - hgap) / 2} and silently discards the
- * remainder at the trailing edge, so over the panel's odd content widths every half-split row
- * ended one pixel short of the right rail the rows above it sat on — measured: filter combos at
- * x221 against cards at x222, and "Close raid" at x211 under a "-1 other spot" at x212. Worse,
- * the defect flips with the scrollbar: content is 213px wide beside one and 222px without, so no
- * fixed gap parity can be right in both states. This layout gives the left column the floor and
- * the right column the remainder; a column one pixel wider is invisible, a ragged shared rail is
- * not.
+ * <p>{@link java.awt.GridLayout} floors {@code (width - hgap) / 2} and discards the remainder,
+ * leaving the trailing rail one pixel short of the rows above it. The defect also flips with the
+ * scrollbar, so no fixed gap parity is right in both states. This layout gives the left column
+ * the floor and the right column the remainder; a column one pixel wider is invisible, a ragged
+ * shared rail is not.
  *
- * <p>Children flow left-to-right into rows of two. A sole child spans the full width, which is
- * what a one-role live post needs. Rows take the tallest preferred height among the children.
+ * <p>Children flow left-to-right into rows of two. A sole child spans the full width.
  */
 public final class SplitGrid implements LayoutManager
 {

@@ -29,11 +29,10 @@ import java.util.List;
 import javax.swing.JComboBox;
 
 /**
- * A combo box that owns one sentinel contract end to end, so the rule that prevents a silent default
- * lives in a single place instead of being re-implemented per field. The sentinel is always index 0
- * and is what an unresolved selection falls back to; {@link #read} returns {@code null} while it is
- * selected, so a caller can never mistake "nothing chosen" for a real value. Every programmatic write
- * runs under a guard, so it does not fire the change callback that a user's own selection does.
+ * A combo box with a sentinel contract: index 0 is always the sentinel ("unset") entry.
+ * {@link #read} returns {@code null} while the sentinel is selected, so callers cannot mistake
+ * an empty selection for a real value. Programmatic writes run under a guard and do not fire
+ * the change callback.
  */
 final class SentinelCombo extends JComboBox<String>
 {

@@ -41,7 +41,12 @@ import net.runelite.client.ui.FontManager;
 
 final class HostRaidForm extends JPanel
 {
-	/** Measured cap for the status label so its widest line inks inside the panel with a right margin. */
+	/**
+	 * Max width for the status label.
+	 *
+	 * <p>Left uncapped, Swing grants the label the full panel width and HTML fills it to the edge.
+	 * At 190px the 150px body ({@link WrappedText#PANEL}) wraps cleanly with a clear right margin.
+	 */
 	private static final int STATUS_MAX_WIDTH = 190;
 
 	private final HostDependencies dependencies;
@@ -143,13 +148,12 @@ final class HostRaidForm extends JPanel
 		raidCombo.setEnabled(true);
 		fields.setTierEnabled(true);
 		setRaidTabsEnabled(true);
-		// Presentation must reset with the controls: collapse More and clear the draft so nothing leaks
-		// into the next session.
+		// Collapse More and clear the draft so nothing leaks into the next session.
 		fields.resetPresentation();
 		refreshSubmitState();
 	}
 
-	/** Post is the one gate: it stays disabled until the host has explicitly chosen a tier and spots. */
+	/** Post stays disabled until the host has chosen both a tier and open spots. */
 	private void refreshSubmitState()
 	{
 		final boolean ready = fields.isSubmittable();
@@ -204,7 +208,6 @@ final class HostRaidForm extends JPanel
 
 	private void buildActions(Runnable submit, Runnable cancelEdit)
 	{
-		// The one primary action of this view, so it carries the accent; cancel stays a soft action.
 		postButton.addActionListener(e -> submit.run());
 		HostFormLayout.fullWidth(postButton);
 		details.add(postButton);
@@ -216,10 +219,7 @@ final class HostRaidForm extends JPanel
 		status.setFont(FontManager.getRunescapeSmallFont());
 		status.setForeground(WdrTheme.TEXT_DIM);
 		status.setAlignmentX(Component.LEFT_ALIGNMENT);
-		// Cap the width so the label renders its wrap measure instead of stretching. Left uncapped it is
-		// granted the full panel width and Swing's HTML fills that, inking to the edge and clipping the
-		// tail. 190px was measured by rendering: the 150px body ({@link WrappedText#PANEL}) wraps to two
-		// lines whose widest inks to column 199, a clear margin inside the 205px measure, with no clip.
+		// Cap width so Swing's HTML wraps at the body measure rather than stretching to the panel edge.
 		status.setMaximumSize(new Dimension(STATUS_MAX_WIDTH, Integer.MAX_VALUE));
 		details.add(status);
 	}

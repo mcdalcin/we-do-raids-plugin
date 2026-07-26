@@ -40,9 +40,8 @@ import javax.swing.event.DocumentListener;
 import net.runelite.client.ui.FontManager;
 
 /**
- * Shared layout idioms for the host form, kept in one place so the draft card and the More section
- * speak the same grid. Rows carry a small dim label above the control, matching the panel's
- * label-over-field convention.
+ * Shared layout idioms for the host form: rows with a dim label above the control, matching the
+ * panel label-over-field convention.
  */
 final class HostFormLayout
 {
@@ -75,17 +74,13 @@ final class HostFormLayout
 	static JPanel labeled(String label, Component field)
 	{
 		final JLabel text = new JLabel(label);
-		// Scaffolding, not data: a label is read once to find its control, the value every time after.
-		// Both sat at TEXT_DIM, which is what flattened the card to a single tone; TEXT_MUTED is the
-		// tier the feed beside it already uses for supporting detail, so this borrows rather than adds.
+		// Labels read once; values read repeatedly. TEXT_MUTED keeps them subordinate without disappearing.
 		text.setForeground(WdrTheme.TEXT_MUTED);
 		text.setFont(FontManager.getRunescapeSmallFont());
 		final JPanel row = new JPanel(new BorderLayout(0, 1));
 		row.setOpaque(false);
 		row.setAlignmentX(Component.LEFT_ALIGNMENT);
-		// Space above, none below. The label belongs to the field beneath it, so the gap has to fall
-		// between groups instead of inside one; symmetric padding spent it in both places at once and
-		// left the card a uniform stack. Costs 2px a row and doubles the separation between groups.
+		// Gap above only: the label belongs to the field beneath it, so spacing falls between groups.
 		row.setBorder(BorderFactory.createEmptyBorder(4, 0, 0, 0));
 		row.add(text, BorderLayout.NORTH);
 		row.add(field, BorderLayout.CENTER);

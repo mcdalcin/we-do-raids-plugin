@@ -33,10 +33,9 @@ import javax.swing.JLabel;
 import net.runelite.client.ui.FontManager;
 
 /**
- * The tier field: a sentinel-guarded combo (B2) plus the "tiers limited by KC" hint. It filters the
- * raid's ladder to the tiers a host has the kill count to host, so an ineligible tier is never
- * offered, and states why the ladder is short. The sentinel contract lives in {@link SentinelCombo};
- * this adds only the KC eligibility and the hint. The card lays out {@link #combo} and {@link #hint}.
+ * Tier selector: a {@link SentinelCombo} filtered to the tiers a host's KC qualifies for,
+ * with a hint line that appears when some tiers are hidden. The card lays out {@link #combo}
+ * and {@link #hint} directly.
  */
 final class TierChooser
 {

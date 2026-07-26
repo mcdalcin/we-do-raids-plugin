@@ -96,9 +96,7 @@ final class HostLivePostView extends JPanel
 		card.add(Box.createVerticalStrut(4));
 		card.add(row(spotsChip(spots)));
 
-		// Nothing between the chip and the actions once the party is full. "Party full" restated what the
-		// chip now says itself, in the card's quietest ink directly beneath its loudest — one fact rendered
-		// twice at opposite weights. What is left to do when full is close or edit, and both are below.
+		// When the party is full the chip already says so; the only remaining actions are close and edit.
 		final List<String> roles = roles(fields);
 		if (!"+0".equals(spots))
 		{
@@ -115,9 +113,7 @@ final class HostLivePostView extends JPanel
 		if (canUndo)
 		{
 			card.add(Box.createVerticalStrut(6));
-			// Recovery, not a forward action: it exists for the press a host regrets and should be findable
-			// then rather than competing before it. Boxed at GHOST it was the third identical button in a
-			// stack of five, all claiming the same rank as marking a role filled.
+			// Recovery action: lower visual rank than the role/spot controls above it.
 			WdrButton undoButton = new WdrButton("Undo last change", WdrButton.Variant.QUIET);
 			undoButton.addActionListener(e -> undo.run());
 			HostFormLayout.fullWidth(undoButton);
@@ -140,8 +136,7 @@ final class HostLivePostView extends JPanel
 		appendSummary(summary, fields.get("tier"));
 		final String world = fields.get("world");
 		appendSummary(summary, world == null || world.isEmpty() ? null : "W" + world);
-		// Labelled the way every other surface renders this value ("ph: catdog" on feed cards and the
-		// draft card's truth line). Bare, the passphrase read as an unexplained word on the host's own card.
+		// Prefixed "ph:" to match how feed cards and the draft card render this value.
 		final String hub = fields.get("partyHub");
 		appendSummary(summary, hub == null || hub.isEmpty() ? null : "ph: " + hub);
 		return summary.toString();
@@ -167,14 +162,11 @@ final class HostLivePostView extends JPanel
 	}
 
 	/**
-	 * No raid rail here. A rail earns its pixel in the feed by separating one call from the next;
-	 * this card stands alone above the feed, so the rail only made the host's own post look like one
-	 * more item in the list they are scrolling. The title names the raid instead.
+	 * Card for the host's live post.
 	 *
-	 * <p>A neutral outline replaces it, because the surface alone cannot hold the card: against the
-	 * panel canvas it measures 1.14:1, so without an edge this card dissolved into the canvas while the
-	 * railed feed cards directly beneath it stayed legible as cards. Outlined and railed now say
-	 * different things — one thing, versus one of many — which is the distinction that matters here.
+	 * <p>Uses a neutral outline rather than a raid rail: the surface alone measures 1.14:1 against
+	 * the canvas, so an unbordered card dissolves into it. Outlined means "one thing"; railed means
+	 * "one of many".
 	 */
 	private static JPanel card()
 	{
@@ -188,21 +180,14 @@ final class HostLivePostView extends JPanel
 
 	private static JLabel spotsChip(String spots)
 	{
-		// Data, not a control. Boxed in FIELD fill with a BORDER outline this was pixel-identical to the
-		// resting GHOST buttons directly beneath it, and everywhere else in the panel that grammar means
-		// "pressable". The count keeps its rank through weight instead: the card's one glanceable number,
-		// bold, in primary ink, with no box to claim an affordance it does not have.
+		// Not a control: bold primary ink conveys rank without a box that implies pressability.
 		JLabel chip = new JLabel(chipText(spots));
 		chip.setFont(FontManager.getRunescapeBoldFont());
 		chip.setForeground(WdrTheme.TEXT);
 		return chip;
 	}
 
-	/**
-	 * At zero this read "+0 open", which spent the brightest ink in the card on a null quantity and left
-	 * the reader to do the arithmetic. The chip is the one thing a host checks without reading anything
-	 * else, so it states the state.
-	 */
+	/** Returns "Full" when spots is "+0", otherwise "N open". */
 	private static String chipText(String spots)
 	{
 		if ("+0".equals(spots))
@@ -235,9 +220,7 @@ final class HostLivePostView extends JPanel
 
 	private void addSpotControl(JPanel card)
 	{
-		// No hint line. "Open spots" restated the chip two lines up ("+3 open") in quieter ink, and the
-		// roles branch's hint earns its line by naming the action ("Mark role filled") where the buttons
-		// name roles. "-1 spot" already names its action, so a label above it had nothing left to say.
+		// No hint line: "-1 spot" already names its action.
 		WdrButton minusSpot = new WdrButton("-1 spot", WdrButton.Variant.PRIMARY);
 		minusSpot.addActionListener(e -> decrementSpot.run());
 		HostFormLayout.fullWidth(minusSpot);
@@ -248,8 +231,7 @@ final class HostLivePostView extends JPanel
 	{
 		JPanel row = new JPanel(new SplitGrid(6, 0));
 		row.setOpaque(false);
-		// A detour, not a peer of closing the raid. Boxed at GHOST it matched "Close raid" exactly, so a
-		// terminal action and a way to amend one read as the same weight of choice.
+		// Edit is a detour, not a peer of closing: QUIET rank keeps it below the DANGER close button.
 		WdrButton edit = new WdrButton("Edit details", WdrButton.Variant.QUIET);
 		edit.addActionListener(e -> beginEdit.run());
 		row.add(edit);

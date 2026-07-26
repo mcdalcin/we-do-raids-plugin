@@ -105,8 +105,7 @@ final class RaidWatermark
 		final Graphics2D scoped = (Graphics2D) graphics.create();
 		scoped.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
 		scoped.clipRect(0, 0, width, height);
-		// Cover rather than fit by height: art narrower than the card would start to the right of where the
-		// mask ends, giving a hard seam instead of a fade.
+		// Cover rather than fit by height: art narrower than the card would leave a hard seam at the fade.
 		final double scale = Math.max(
 			(double) width / art.getWidth(),
 			(double) height / art.getHeight());
@@ -114,8 +113,7 @@ final class RaidWatermark
 		final int drawHeight = Math.max(1, (int) Math.ceil(art.getHeight() * scale));
 		scoped.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, MAX_ALPHA));
 		scoped.drawImage(art, width - drawWidth, (height - drawHeight) / 2, drawWidth, drawHeight, null);
-		// Mask the left back to card colour. Exact here because the band has nothing behind it but the
-		// card's own fill, and it costs one gradient instead of an offscreen DstIn pass.
+		// Exact card colour avoids an offscreen DstIn pass; one gradient is enough.
 		scoped.setComposite(AlphaComposite.SrcOver);
 		final Color opaque = WdrTheme.CARD;
 		final Color clear = new Color(opaque.getRed(), opaque.getGreen(), opaque.getBlue(), 0);

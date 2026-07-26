@@ -100,11 +100,9 @@ final class RaidTabButton extends JButton
 	}
 
 	/**
-	 * Ink per state, painted by this class so the look and feel cannot re-dim it. Left to the L&F,
-	 * a disabled selected tab rendered at (149,149,149) over the raid fill — 2.20:1, under the 4.5:1
-	 * body minimum — on exactly the control that names which raid an edit has locked. The selected
-	 * tab keeps primary ink because it states a fact; the unselected tabs drop to the muted disabled
-	 * ink the rest of the panel's controls already use, and the cursor change carries the rest.
+	 * Ink per state, painted here because the L&F re-dims it: left alone, a disabled selected tab falls
+	 * to 2.20:1 over the raid fill, under the 4.5:1 body minimum. Selected keeps primary ink, unselected
+	 * drops to muted disabled ink, and the cursor carries the rest.
 	 */
 	private Color inkColor(boolean isSelected)
 	{
@@ -174,17 +172,15 @@ final class RaidTabButton extends JButton
 		graphics2d.clipRect(0, 0, width, height);
 		graphics2d.setColor(fill);
 		graphics2d.fillRoundRect(spanStart(), 0, spanWidth(width), height, ARC, ARC);
-		// One outline around the whole bar, so the shared edges carry a single divider instead of two
-		// abutting borders. The raid stays on the fill; the boundary stays neutral in every state.
+		// One outline around the whole bar so shared edges carry a single divider, not two abutting borders.
 		graphics2d.setColor(WdrTheme.BORDER);
 		graphics2d.drawRoundRect(spanStart(), 0, spanWidth(width) - 1, height - 1, ARC, ARC);
 		if (segment != Segment.LAST)
 		{
 			graphics2d.drawLine(width - 1, 0, width - 1, height - 1);
 		}
-		// The label, painted here rather than by super: the L&F substitutes its own colour for disabled
-		// text, which is what produced the 2.20:1 failure this class now guards against. Text antialiasing
-		// stays off so the pixel font renders exactly as every other label in the client.
+		// Painted here rather than by super: the L&F substitutes its own colour for disabled text (the
+		// 2.20:1 failure above). Text antialiasing off so the pixel font renders like every other label.
 		graphics2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
 		graphics2d.setFont(getFont());
 		graphics2d.setColor(inkColor(isSelected));

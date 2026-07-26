@@ -54,10 +54,7 @@ final class RecruitEntryPanel extends JPanel
 	{
 		super(new BorderLayout(0, 4));
 		setBackground(WdrTheme.CARD);
-		// A hairline rule, not a slab. The hue's job here is a scannable left rail, and rendering both
-		// alternatives settled it: a full 1px perimeter multiplied the hue's area roughly eightfold and
-		// turned a list of calls into a stack of boxes, while 3px spent width a 225px column cannot
-		// spare. 1px keeps the rail, cuts the coloured area by two thirds, and returns 2px to content.
+		// 1px left rail only. A full perimeter border multiplies the hue's area and turns the list into a stack of boxes.
 		setBorder(BorderFactory.createCompoundBorder(
 			BorderFactory.createMatteBorder(0, 1, 0, 0, entry.getRaidType().getColor()),
 			BorderFactory.createEmptyBorder(6, 8, 6, 8)));

@@ -65,8 +65,8 @@ public class HostFormPanel extends JPanel
 		setLayout(new BorderLayout(0, 4));
 		setOpaque(false);
 
-		// Deliberately not added to this panel. The toggle is pinned as fixed chrome by the owning
-		// panel so a long feed cannot scroll hosting out of reach; only the form below it scrolls.
+		// The toggle is not added to this panel. It is pinned as fixed chrome by the owning panel
+		// so a long feed cannot scroll hosting out of reach; only the form below it scrolls.
 		toggle.addActionListener(e -> setExpanded(!expanded));
 		applyToggleWeight();
 
@@ -138,12 +138,10 @@ public class HostFormPanel extends JPanel
 	}
 
 	/**
-	 * Weight follows state rather than construction.
+	 * Font and padding follow the expanded state.
 	 *
-	 * <p>Collapsed, the toggle is bold at 30px: at the shared small font and padding it measured the
-	 * same 20px as the filter combo directly beneath it and read as an input. Expanded, that same
-	 * treatment made the control that abandons the form the heaviest thing on screen, sitting above the
-	 * submit it dwarfed, so it returns to the ordinary control size once the form is open.
+	 * <p>Collapsed, the toggle is bold at 30px so it reads as an entry point rather than an input.
+	 * Expanded, it returns to the ordinary control size so it doesn't outrank the submit button below it.
 	 */
 	private void applyToggleWeight()
 	{
@@ -159,12 +157,9 @@ public class HostFormPanel extends JPanel
 	{
 		this.expanded = expanded;
 		toggle.setText(expanded ? "Hide host form" : "Host raid");
-		// Collapsed, this is the way into hosting: accent-edged so a glance finds it, unfilled so it never
-		// claims the rank that belongs to the form's own submit. Expanded, the submit is on screen and this
-		// becomes a way back out — chrome that conceals, which is what QUIET is for. GHOST kept it boxed at
-		// primary ink, so the control for dismissing the form outranked the fields inside it; measured, it
-		// was the loudest thing above the card at 12.87:1 while the chips a host actually sets sat at 6.22:1.
-		// Unboxed at TEXT_DIM it matches More options, so both disclosure controls in the flow read alike.
+		// Collapsed: ENTRY (accent-edged, unfilled) so it reads as the way into hosting without
+		// claiming the rank of the form's submit. Expanded: QUIET so the control for dismissing
+		// the form doesn't outrank the fields inside it.
 		toggle.setVariant(expanded ? WdrButton.Variant.QUIET : WdrButton.Variant.ENTRY);
 		applyToggleWeight();
 		raidForm.setVisible(expanded && (displayedLiveFields == null || editingLive));

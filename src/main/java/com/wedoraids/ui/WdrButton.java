@@ -37,11 +37,11 @@ import javax.swing.JButton;
 import net.runelite.client.ui.FontManager;
 
 /**
- * A flat rectangular button in the WDR palette, matching the client's utilitarian look.
- * Five variants, ordered by how much they claim: PRIMARY (filled green, the one action a view exists
- * to perform), ENTRY (accent edge on the bare surface, for the way into a flow), GHOST (plain, a soft
- * action), DANGER (muted red, destructive) and QUIET (unboxed, for chrome that reveals rather than
- * acts).
+ * Flat rectangular button in the WDR palette.
+ *
+ * <p>Five variants by assertion weight: PRIMARY (filled green, the one action a view exists to
+ * perform), ENTRY (accent edge on bare surface, the way into a flow), GHOST (plain, a soft
+ * action), DANGER (muted red, destructive), QUIET (unboxed, reveals rather than acts).
  */
 public class WdrButton extends JButton
 {
@@ -70,17 +70,13 @@ public class WdrButton extends JButton
 			@Override
 			public void mouseEntered(MouseEvent e)
 			{
-				hover = true;
-				setForeground(textColor());
-				repaint();
+				setHover(true);
 			}
 
 			@Override
 			public void mouseExited(MouseEvent e)
 			{
-				hover = false;
-				setForeground(textColor());
-				repaint();
+				setHover(false);
 			}
 		});
 		addFocusListener(new FocusAdapter()
@@ -99,10 +95,16 @@ public class WdrButton extends JButton
 		});
 	}
 
+	private void setHover(boolean hovering)
+	{
+		hover = hovering;
+		setForeground(textColor());
+		repaint();
+	}
+
 	/**
-	 * Swaps the button's rank. A control that both opens and closes a view is the main action in one
-	 * of those states and a secondary one in the other, so its variant belongs to the state rather
-	 * than to construction, and the view keeps exactly one primary either way.
+	 * Swaps the button's variant. A control that both opens and closes a view is the main action
+	 * in one state and secondary in the other; variant belongs to state, not construction.
 	 */
 	public void setVariant(Variant variant)
 	{
@@ -128,7 +130,7 @@ public class WdrButton extends JButton
 	{
 		if (!isEnabled())
 		{
-			// A disabled control has to read as unavailable, not as a soft ghost action.
+			// Disabled reads as unavailable, not as a soft ghost action.
 			return WdrTheme.TEXT_MUTED;
 		}
 		switch (variant)
@@ -159,15 +161,12 @@ public class WdrButton extends JButton
 			case PRIMARY:
 				return pressed ? WdrTheme.ACCENT_PRESSED : (hover ? WdrTheme.ACCENT_HOVER : WdrTheme.ACCENT);
 			case ENTRY:
-				// Marked by its edge, not filled. Filling this read as the view's submit and, measured, put
-				// 6466px of chroma in the chrome against 1642px across every raid hue in the feed below it,
-				// which inverts the rule that chrome never competes with raid data. The edge costs 480px.
+				// Marked by its edge, not filled: a filled ENTRY competes with raid data in the feed.
 				return pressed ? WdrTheme.ACCENT_PRESSED : (hover ? towardSurface(WdrTheme.ACCENT) : null);
 			case DANGER:
 				return pressed ? WdrTheme.ERROR_PRESSED : (hover ? WdrTheme.ERROR_FILL : WdrTheme.FIELD);
 			case QUIET:
-				// Chrome, not an action: no box at rest, so it cannot compete with the view's submit. Hover
-				// still fills, because a control that responds to nothing does not read as clickable.
+				// No box at rest so it cannot compete with the view's submit; hover still fills so it reads as clickable.
 				return hover ? WdrTheme.HOVER : null;
 			case GHOST:
 			default:
@@ -179,10 +178,8 @@ public class WdrButton extends JButton
 	{
 		if (!isEnabled())
 		{
-			// Rank has to survive being unavailable. A disabled primary keeps a muted trace of its accent
-			// edge, because rendering it in the same neutral edge as everything else made the submit
-			// pixel-identical to the enabled disclosure directly above it: same fill, same border, same
-			// height, differing only in ink. The one action the view exists for was the hardest to find.
+			// Disabled PRIMARY keeps a muted accent edge so its rank survives being unavailable;
+			// without it a disabled submit is pixel-identical to the enabled disclosure above it.
 			if (variant == Variant.PRIMARY)
 			{
 				return towardSurface(WdrTheme.ACCENT_EDGE);
@@ -194,13 +191,11 @@ public class WdrButton extends JButton
 			case PRIMARY:
 				return WdrTheme.ACCENT_EDGE; // carries the 3:1 boundary so the fill is free to signal state
 			case ENTRY:
-				// Neutral ink above it, because any green light enough to pass 4.5:1 on the canvas lands in
-				// the raid band around OKLCH lightness 0.76 and would read as CoX. The edge sits at 0.618,
-				// clear of it, so the accent still says "this is the way in" without borrowing a raid's hue.
+				// Neutral ink above it; any green light enough to pass 4.5:1 on the canvas lands in the
+				// raid band at OKLCH ~0.76 and reads as CoX. The edge sits at 0.618, clear of that band.
 				return WdrTheme.ACCENT_EDGE;
 			case DANGER:
-				// The edge lights up on press because the fill cannot: ink caps how light the fill may go,
-				// so the press reads on the edge instead of a luminance step that would fail contrast.
+				// Edge lights up on press because the fill cannot go lighter without dropping ink under 4.5:1.
 				return getModel().isArmed() && getModel().isPressed() ? WdrTheme.ERROR : WdrTheme.ERROR_FILL;
 			case QUIET:
 				return null;
@@ -241,8 +236,7 @@ public class WdrButton extends JButton
 		}
 		if (isFocusOwner())
 		{
-			// setFocusPainted(false) drops the look and feel's own ring, so paint one: WCAG 2.4.7 is AA,
-			// and the key field in the verification notice is reached by keyboard before this button is.
+			// setFocusPainted(false) drops the L&F ring; paint one manually for WCAG 2.4.7.
 			g2.setColor(WdrTheme.FOCUS_RING);
 			g2.drawRect(2, 2, w - 5, h - 5);
 		}

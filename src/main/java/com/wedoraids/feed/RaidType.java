@@ -31,12 +31,9 @@ import lombok.RequiredArgsConstructor;
 /**
  * The three WDR raids and their tier ladders.
  *
- * <p>Each raid's colour is the panel's one data dimension. The hues stay true to the raids
- * themselves (Verzik purple, Xeric green, Amascut gold) so they are recognisable to players,
- * but all three are equalised at OKLCH lightness 0.76 with matched chroma. Before equalising,
- * ToA read almost twice as strongly as ToB against the card surface (9.6:1 vs 5.0:1), which
- * made ToA calls look more urgent purely by colour weight; they now sit within 0.8 of each
- * other and every one clears WCAG AA on both the card and the panel canvas.
+ * <p>Each raid's colour is the panel's one data dimension. Hues follow the raids (Verzik purple,
+ * Xeric green, Amascut gold) and are equalised at OKLCH lightness 0.76 with matched chroma so no
+ * raid outranks another by colour weight. All three clear WCAG AA on both the card and the canvas.
  *
  * <p>Colour is never the only signal: every raid is also labelled in text.
  */

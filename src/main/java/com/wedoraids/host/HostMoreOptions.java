@@ -38,9 +38,8 @@ import javax.swing.SwingUtilities;
 import net.runelite.client.ui.FontManager;
 
 /**
- * The collapsed-by-default disclosure holding the fields a host rarely retouches: world override,
- * party hub, friends chat, other roles, description and the CoX layout editor. Copy that used to
- * hide in tooltips is surfaced here as visible dim hints, so guidance survives a glance.
+ * Collapsed-by-default disclosure for fields a host rarely changes: world override, party hub,
+ * friends chat, other roles, description, and the CoX layout editor.
  */
 final class HostMoreOptions extends JPanel
 {
@@ -51,7 +50,7 @@ final class HostMoreOptions extends JPanel
 	}
 
 	private static final String HUB_HINT = "Optional passphrase joiners use with the RuneLite Party plugin";
-	/** The hub hint wraps inside a nested capped panel granted less width than the bare panel measure. */
+	/** 145px cap keeps the hub hint from overflowing the nested panel. */
 	private static final int HUB_HINT_WIDTH = 145;
 
 	private final Runnable onChange;
@@ -122,8 +121,7 @@ final class HostMoreOptions extends JPanel
 		open = value;
 		content.setVisible(value);
 		toggle.setText(value ? "Fewer options" : "More options");
-		// The draft card's truth line mirrors these fields while they are hidden, so toggling the
-		// disclosure changes what the card should show and has to refresh it like an edit does.
+		// The draft card mirrors these fields while hidden, so toggling the disclosure must refresh it like an edit.
 		onChange.run();
 		revalidate();
 		repaint();
@@ -140,11 +138,8 @@ final class HostMoreOptions extends JPanel
 		final JTextField target = fieldFor(field);
 		// The edge is the association the status line cannot carry from five fields away.
 		WdrTheme.flagInvalid(target);
-		// The validation that lands here fires from the submit button near the bottom of a viewport
-		// that can be ~500px tall, and opening the disclosure grows the form past it. Without a scroll,
-		// the field the host must fix and the error explaining why both sit below the fold, so the
-		// click appears to do nothing. Deferred, because the field was invisible a moment ago: its
-		// bounds only exist after the revalidate this open queued has run.
+		// Deferred: the field was invisible a moment ago, so its bounds only exist after the revalidate
+		// that setOpen queued has run. Without the scroll, the field and its error both sit below the fold.
 		SwingUtilities.invokeLater(() ->
 		{
 			target.scrollRectToVisible(new Rectangle(0, 0, target.getWidth(), target.getHeight()));
@@ -185,9 +180,7 @@ final class HostMoreOptions extends JPanel
 	}
 
 	/**
-	 * Mirrors the card's scout line into the editor's own hint, reusing the {@code Scout:} wording so
-	 * the card and More agree, and the editor is never a bare box that asks for input and explains
-	 * nothing: the hint states what was scouted, or that nothing has been detected yet.
+	 * Mirrors the scout result into the layout editor hint, so the editor is never a bare unlabelled box.
 	 */
 	void setLayoutScout(String text)
 	{

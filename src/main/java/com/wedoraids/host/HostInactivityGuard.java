@@ -51,8 +51,8 @@ final class HostInactivityGuard
 	private final Timer promptTimer;
 	private final JPanel banner = new JPanel();
 	/**
-	 * Placeholder text matters: {@code fullWidth} caps a component's maximum height at its preferred
-	 * height, and an empty label prefers zero, which would pin the countdown closed for good.
+	 * Placeholder text is required: {@code fullWidth} caps a component's maximum height at its
+	 * preferred height, and an empty label prefers zero, which pins the countdown closed permanently.
 	 */
 	private final JLabel countdown = new JLabel(" ");
 	private int promptRemaining;
@@ -131,8 +131,8 @@ final class HostInactivityGuard
 	{
 		banner.setLayout(new BoxLayout(banner, BoxLayout.Y_AXIS));
 		banner.setBackground(WdrTheme.CARD);
-		// The countdown ends by closing the host's post, so it uses the failure role rather than a
-		// fourth chrome hue; an amber warning would read as ToA in a panel full of raid colours.
+		// Uses the failure colour rather than a neutral hue: the countdown ends by closing the post,
+		// so it belongs to the failure role. An amber warning would read as ToA in a raid-colour panel.
 		banner.setBorder(BorderFactory.createCompoundBorder(
 			BorderFactory.createMatteBorder(0, 1, 0, 0, WdrTheme.ERROR),
 			BorderFactory.createEmptyBorder(8, 10, 10, 10)));

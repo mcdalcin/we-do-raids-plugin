@@ -65,9 +65,7 @@ public class WeDoRaidsPanel extends PluginPanel
 		setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 		setBackground(WdrTheme.BACKGROUND);
 
-		// Only the title row and the status bar are fixed chrome. Everything else scrolls together:
-		// an expanded host form is taller than a fixed-mode sidebar (~500px), so pinning it above the
-		// feed starved the feed to zero height and pushed the raid counts into the status bar.
+		// The host form can be taller than the fixed-mode sidebar (~500px), so it must scroll with the feed.
 		hostForm = new HostFormPanel(hostDependencies);
 		hostForm.setAlignmentX(Component.LEFT_ALIGNMENT);
 
@@ -91,13 +89,8 @@ public class WeDoRaidsPanel extends PluginPanel
 		feedChrome.setLayout(new BoxLayout(feedChrome, BoxLayout.Y_AXIS));
 		feedChrome.setOpaque(false);
 		feedChrome.setAlignmentX(Component.LEFT_ALIGNMENT);
-		// A heading, because neither of the other two levers works here. The old 1px rule was drawn in the
-		// same BORDER as every control outline and read as one more container edge; space alone does not do
-		// it either, since the collapsed panel already opens 26px here and the boundary still reads as
-		// continuous. Both sides of that gap are a full-width bordered row on the same surface at the same
-		// inset, so a gap between them says "two spaced items", not "two regions". A named heading is the
-		// one marker that starts a section outright, and the feed was the only region in the panel without
-		// one. Space above it, none below: the heading belongs to what follows.
+		// A named heading separates the feed region. A gap alone doesn't work: both sides are full-width
+		// bordered rows on the same surface, so space reads as spacing, not as a section boundary.
 		feedChrome.add(Box.createVerticalStrut(13));
 		feedChrome.add(feedHeading());
 		feedChrome.add(Box.createVerticalStrut(3));
@@ -105,9 +98,6 @@ public class WeDoRaidsPanel extends PluginPanel
 		filterBar.restoreSelection();
 		feedChrome.add(Box.createVerticalStrut(3));
 		feedChrome.add(recruitList.countLabel());
-		// The list contributes its own leading padding, so the strut that reads as 4px here measured 7px
-		// against a 6px card-to-card rhythm — the counts sat further from the first card than the cards sit
-		// from each other, and bound downward to nothing. Under the rhythm, the group holds together.
 		feedChrome.add(Box.createVerticalStrut(1));
 
 		content.add(demoBanner);
@@ -124,9 +114,7 @@ public class WeDoRaidsPanel extends PluginPanel
 			feedChrome.setVisible(accessible);
 		});
 
-		// The toggle is pinned rather than scrolled. It is the only button-shaped action in the feed,
-		// and as the top item of the scroll content it used to be the first thing a long feed pushed
-		// out of sight, which is exactly when someone decides to start their own raid instead.
+		// The toggle is pinned above the scroll so a long feed can't push it out of sight.
 		JPanel topChrome = new JPanel(new BorderLayout(0, 8));
 		topChrome.setOpaque(false);
 		topChrome.add(header, BorderLayout.NORTH);
@@ -139,12 +127,8 @@ public class WeDoRaidsPanel extends PluginPanel
 	}
 
 	/**
-	 * Names the feed region so it starts somewhere.
-	 *
-	 * <p>Bold at {@link WdrTheme#TEXT_DIM}: heavier than the muted regular of a field label, quieter than
-	 * a card's raid-hued title, so it reads as structure rather than as either. "Calls" is the word the
-	 * rest of the product uses for a recruitment post. Exactly one heading exists in the panel, which is
-	 * what keeps it a named section rather than an eyebrow stamped over everything.
+	 * Feed region heading. Bold {@link WdrTheme#TEXT_DIM}: heavier than a field label, quieter than
+	 * a raid title. "Calls" is the product word for a recruitment post.
 	 */
 	private static JLabel feedHeading()
 	{

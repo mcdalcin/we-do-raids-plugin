@@ -46,12 +46,11 @@ import javax.swing.JTextField;
 import net.runelite.client.ui.FontManager;
 
 /**
- * The compose surface: a raid-hued card, built in the same visual language as the live post and the
- * feed card, so a host writes a call rather than filling a database record. The headline mirrors
- * what a joiner will see; below it sit the two choices that gate a post (tier, and how many are
- * needed), the ToB role chips, the CoX scale, the scouted layout, and a truth line of everything
- * else that will ship. The sentinel-guarded combos live in {@link SentinelCombo} and
- * {@link TierChooser}; this card owns the presentation around them.
+ * The compose surface: a raid-hued card where a host writes a call rather than filling a form.
+ *
+ * <p>The headline mirrors what a joiner sees. Below it sit the two gating choices (tier and open
+ * spots), the ToB role chips, the CoX scale, the scouted layout, and a truth line for everything
+ * else that ships. Sentinel-guarded combos live in {@link SentinelCombo} and {@link TierChooser}.
  */
 final class HostDraftCard extends JPanel
 {
@@ -80,9 +79,7 @@ final class HostDraftCard extends JPanel
 		this.onChange = onChange;
 		setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 		setBackground(WdrTheme.CARD);
-		// Outlined, not railed. In the feed a rail separates one call from its neighbours; this card has
-		// no neighbours, so a rail marked nothing while making the raid being composed look like the raids
-		// being browsed. The headline still carries the hue.
+		// Outlined, not railed: this card has no neighbours, so a rail would mark nothing.
 		setBorder(WdrTheme.CARD_BORDER);
 		setAlignmentX(Component.LEFT_ALIGNMENT);
 		WdrTheme.styleField(scale);
@@ -92,10 +89,7 @@ final class HostDraftCard extends JPanel
 		add(tierChooser.combo());
 		add(tierChooser.hint());
 		add(Box.createVerticalStrut(2));
-		// "Need" and "Team" named the host's own shorthand, not the values: one offers +1..+n and the
-		// other a party size, and nothing on screen said which was which while both showed a sentinel.
-		// "open" is the word the rest of the panel already uses for a free spot (a live post's "+2 open",
-		// the footer's "14 open"), so this borrows the product's language instead of inventing a label.
+		// "open" matches the panel's existing language for a free spot (live post "+2 open", footer "14 open").
 		add(HostFormLayout.pair(
 			HostFormLayout.labeled("Open spots", spots),
 			HostFormLayout.labeled("Team size", team)));
@@ -104,9 +98,7 @@ final class HostDraftCard extends JPanel
 		add(scaleRow);
 		dim(layoutState);
 		add(layoutState);
-		// Matches the gap a labelled group gets above it, so the routes read as their own group rather
-		// than a trailing line of the one before. Measured at 2px it was tighter than every other seam
-		// in the card while sitting on 9px of the card's own bottom padding.
+		// 3px matches the gap a labelled group gets above it, so the truth line reads as its own group.
 		add(Box.createVerticalStrut(3));
 		muted(truthLine);
 		add(truthLine);
@@ -121,12 +113,10 @@ final class HostDraftCard extends JPanel
 	}
 
 	/**
-	 * Paints the raid watermark between the card's fill and its contents.
+	 * Paints the raid watermark between the card fill and its contents.
 	 *
-	 * <p>Swing paints the background here, children afterwards and the border last, so art added at the
-	 * end of this method lands above the surface and below every label without touching the outline. The
-	 * band stops at the headline: the controls below it are opaque fields that would mask it into stripes
-	 * anyway, and the raid is an identity, not a texture for the whole form.
+	 * <p>Swing paints background here, children next, border last -- art added at the end of this
+	 * method lands above the surface and below every label without touching the outline.
 	 */
 	@Override
 	protected void paintComponent(Graphics graphics)
@@ -136,13 +126,11 @@ final class HostDraftCard extends JPanel
 	}
 
 	/**
-	 * How deep the raid watermark bleeds: card top padding, the headline's own height, and the slack
-	 * already sitting between the headline and the tier combo.
+	 * Depth of the watermark band: top padding plus headline height plus {@link #BAND_BLEED}.
 	 *
-	 * <p>Measured rather than assumed, and the slack is free. Ending the band flush with the headline
-	 * left the art 23px to live in, which is too thin a letterbox for a scene to survive the crop. The
-	 * gap below the headline is card surface that nothing else uses, so spending it costs no height at
-	 * all — the combo underneath is opaque and would mask anything past it regardless.
+	 * <p>The bleed extends into the gap below the headline, which is card surface the opaque tier
+	 * combo would mask anyway. Must be measured after layout; falls back to preferred height before
+	 * the first paint.
 	 */
 	private static final int BAND_BLEED = 5;
 
@@ -159,8 +147,7 @@ final class HostDraftCard extends JPanel
 	private void buildHeadline()
 	{
 		raidLabel.setFont(FontManager.getRunescapeBoldFont());
-		// Seed the raid name so topRow's capped height is measured against the bold line, not an empty
-		// label; refreshHeadline overwrites the text and colour on the first layout.
+		// Seed text so topRow's capped height is measured against the bold line, not an empty label.
 		raidLabel.setText(selectedRaid.get().getDisplayName());
 		raidLabel.setForeground(selectedRaid.get().getColor());
 		worldLabel.setFont(FontManager.getRunescapeSmallFont());
@@ -194,13 +181,9 @@ final class HostDraftCard extends JPanel
 	{
 		final StringBuilder body = new StringBuilder();
 		appendRoute(body, partyHub.isEmpty() ? null : "ph: " + partyHub);
-		// Colon on both routes: the feed card and the live summary already taught "ph:", and two adjacent
-		// lines in one block disagreeing on punctuation reads as an oversight, not a convention.
+		// Both routes use colon-prefix ("ph:", "fc:") to match the feed card's convention.
 		appendRoute(body, friendsChat.isEmpty() ? null : "fc: " + friendsChat);
-		// A single JLabel ellipsizes, which silently drops a whole joining route (or the tail of a
-		// passphrase, and a partial passphrase is useless). Rendering as HTML at the card measure wraps
-		// instead of truncating, and each route gets its own line so a long value never pushes the next
-		// one off the end. Every route stays legible; none can vanish.
+		// HTML wraps at the card measure instead of ellipsizing; a truncated passphrase is useless.
 		truthLine.setText(body.length() == 0 ? ""
 			: "<html><body style='width:" + WrappedText.CARD + "px'>" + body + "</body></html>");
 		truthLine.setVisible(body.length() > 0);
@@ -402,13 +385,8 @@ final class HostDraftCard extends JPanel
 	}
 
 	/**
-	 * Tertiary ink, for detail that is present because it has to be, not because it is being read.
-	 *
-	 * <p>The joining routes are the card's least urgent content and were sharing {@link
-	 * WdrTheme#TEXT_DIM} with its field labels, its chip text and the line that says why the post
-	 * cannot go out yet. A feed card renders this same {@code ph:} value at {@link
-	 * WdrTheme#TEXT_MUTED}; matching it costs nothing and stops the draft card contradicting the feed
-	 * directly beneath it.
+	 * Applies tertiary ink to a label: joining routes are the card's least urgent content and must
+	 * match {@link WdrTheme#TEXT_MUTED} as used for the same values on a feed card.
 	 */
 	private void muted(JLabel label)
 	{

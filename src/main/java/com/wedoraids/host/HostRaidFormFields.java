@@ -37,10 +37,12 @@ import javax.swing.BoxLayout;
 import javax.swing.JPanel;
 
 /**
- * Coordinator for the host form. It owns the frozen wire contract ({@link #collectValidatedFields},
- * {@link #populate}) and raid applicability, and delegates presentation to the draft card
- * (section B) and the More disclosure (section C). Sentinel choices never reach the wire map, and
- * new-draft auto-behaviour is kept out of the populate path so an edit round-trips untouched.
+ * Coordinator for the host form's field sections.
+ *
+ * <p>Owns the wire contract ({@link #collectValidatedFields}, {@link #populate}) and raid
+ * applicability, and delegates presentation to the draft card and the More disclosure. Sentinel
+ * choices never reach the wire map, and new-draft auto-behaviour is kept out of the populate path
+ * so an edit round-trips untouched.
  */
 final class HostRaidFormFields extends JPanel
 {
@@ -332,9 +334,8 @@ final class HostRaidFormFields extends JPanel
 	private void refreshHeadlineAndTruth()
 	{
 		card.refreshHeadline(more.getWorld().trim());
-		// The truth line surfaces values a collapsed More is hiding. With the disclosure open, those
-		// same fields are on screen 40px below it, and rendering proved the line was restating them
-		// live, keystroke by keystroke. One fact, one place: the line stands down while the fields show.
+		// The truth line surfaces values a collapsed More is hiding; suppress it while More is open
+		// so the same fields don't appear twice on screen at once.
 		if (more.isOpen())
 		{
 			card.refreshTruth("", "");
@@ -366,11 +367,7 @@ final class HostRaidFormFields extends JPanel
 		return scout != null && !scout.isEmpty() ? "Scout: " + scout : "Scout: not detected yet";
 	}
 
-	/**
-	 * The editor's hint answers what the field is for, never what the scout currently says. The card
-	 * already states the scout, and repeating it here put the same sentence on screen twice whenever
-	 * More was open.
-	 */
+	/** Hint shown inside the layout editor in More: answers what the field is for, not what the scout says. */
 	private String layoutEditorHint()
 	{
 		final String scout = dependencies.coxLayout().get();

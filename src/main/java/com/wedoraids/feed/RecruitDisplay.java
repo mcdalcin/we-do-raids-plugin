@@ -120,13 +120,10 @@ public final class RecruitDisplay
 	}
 
 	/**
-	 * True when the raw message says nothing the card does not already show in its own fields.
+	 * True when the raw message adds nothing the card doesn't already show in its structured fields.
 	 *
-	 * <p>Bridge messages routinely restate the parsed data ("trio w447 mdps/rdps +2 phub olm" beside
-	 * a card already showing the world, fill and roles). Rendering both costs two or three lines of a
-	 * 225px column per call. Every structured value is removed from a copy of the message; if what
-	 * remains carries no word or number, the message is redundant and the caller can drop it. The
-	 * original text is never altered for display, so nothing is mangled when it does add something.
+	 * <p>Strips each known field value from a copy of the message; if no letter or digit remains, the
+	 * message is redundant. The original text is never altered for display.
 	 */
 	public static boolean messageIsRedundant(RecruitEntry entry)
 	{

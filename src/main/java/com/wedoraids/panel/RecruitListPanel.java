@@ -162,9 +162,8 @@ final class RecruitListPanel extends JPanel
 	}
 
 	/**
-	 * Whether the feed is reachable at all. When it is not, the notice is the whole panel: filters
-	 * would sort nothing and the host form cannot post, so the surrounding chrome is hidden rather
-	 * than left present and inert.
+	 * Whether the feed is reachable. When false, the surrounding chrome (filters, host form) is
+	 * hidden rather than left present and inert.
 	 */
 	boolean feedAccessible()
 	{
