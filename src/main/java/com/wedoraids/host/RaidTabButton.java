@@ -36,15 +36,43 @@ import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import net.runelite.client.ui.FontManager;
 
+/**
+ * One segment of the raid selector.
+ *
+ * <p>Picking a raid is exclusive, so the segments share edges inside a single outline: one bounded
+ * control reads as "pick one", where three separate pills read the same as the multi-select role chips
+ * below them.
+ *
+ * <p>The raid rides on the fill rather than the label. A fill cannot both clear the surface it sits on
+ * and stay dark enough to carry the hue as ink — {@link WdrTheme#ACCENT_EDGE} records the same conflict
+ * for the primary control — so the fill carries the raid and the ink goes to {@link WdrTheme#TEXT}.
+ */
 final class RaidTabButton extends JButton
 {
+	/** Position in the selector, which decides where the bar is rounded and where it is divided. */
+	enum Segment
+	{
+		FIRST, MIDDLE, LAST
+	}
+
+	/**
+	 * How far the selected fill travels from the canvas toward the raid hue. Bounded on both sides: below
+	 * 0.30 it drops under the 1.82:1 {@link WdrTheme#CHIP_CHOSEN} sets as the floor for a glanceable
+	 * state, above 0.40 the white ink falls through 4.5:1. Measures 2.24:1 to 2.36:1.
+	 */
+	private static final double RAID_BLEND = 0.40;
+
+	private static final int ARC = 10;
+
 	private final RaidType raid;
 	private final BooleanSupplier selected;
+	private final Segment segment;
 
-	RaidTabButton(RaidType raid, BooleanSupplier selected, Runnable onSelected)
+	RaidTabButton(RaidType raid, Segment segment, BooleanSupplier selected, Runnable onSelected)
 	{
 		super(raid.getDisplayName());
 		this.raid = raid;
+		this.segment = segment;
 		this.selected = selected;
 		setFont(FontManager.getRunescapeSmallFont());
 		setForeground(WdrTheme.TEXT_DIM);
@@ -59,8 +87,43 @@ final class RaidTabButton extends JButton
 
 	void refreshSelection()
 	{
-		setForeground(selected.getAsBoolean() ? raid.getColor() : WdrTheme.TEXT_DIM);
+		setForeground(selected.getAsBoolean() ? WdrTheme.TEXT : WdrTheme.TEXT_DIM);
 		repaint();
+	}
+
+	/** The selected fill: the canvas walked {@value #RAID_BLEND} of the way to this raid's hue. */
+	private Color raidFill()
+	{
+		final Color hue = raid.getColor();
+		final Color base = WdrTheme.BACKGROUND;
+		return new Color(
+			blend(base.getRed(), hue.getRed()),
+			blend(base.getGreen(), hue.getGreen()),
+			blend(base.getBlue(), hue.getBlue()));
+	}
+
+	private static int blend(int from, int to)
+	{
+		return (int) Math.round(from + RAID_BLEND * (to - from));
+	}
+
+	/**
+	 * The rounded rectangle for this segment, overhung past whichever edges are shared. Java2D rounds all
+	 * four corners or none, so overhanging by the radius and letting the clip discard it leaves the outer
+	 * side rounded and the inner side square.
+	 */
+	private int spanStart()
+	{
+		return segment == Segment.FIRST ? 0 : -ARC;
+	}
+
+	private int spanWidth(int width)
+	{
+		if (segment == Segment.MIDDLE)
+		{
+			return width + 2 * ARC;
+		}
+		return width + ARC;
 	}
 
 	@Override
@@ -68,13 +131,13 @@ final class RaidTabButton extends JButton
 	{
 		final Graphics2D graphics2d = (Graphics2D) graphics.create();
 		graphics2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+		final int width = getWidth();
+		final int height = getHeight();
 		final boolean isSelected = selected.getAsBoolean();
-		final Color raidColor = raid.getColor();
 		final Color fill;
 		if (isSelected)
 		{
-			fill = new Color(raidColor.getRed() / 5 + 18, raidColor.getGreen() / 5 + 18,
-				raidColor.getBlue() / 5 + 18);
+			fill = raidFill();
 		}
 		else if (getModel().isRollover())
 		{
@@ -84,10 +147,17 @@ final class RaidTabButton extends JButton
 		{
 			fill = WdrTheme.FIELD;
 		}
+		graphics2d.clipRect(0, 0, width, height);
 		graphics2d.setColor(fill);
-		graphics2d.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
-		graphics2d.setColor(isSelected ? raidColor : WdrTheme.BORDER);
-		graphics2d.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 10, 10);
+		graphics2d.fillRoundRect(spanStart(), 0, spanWidth(width), height, ARC, ARC);
+		// One outline around the whole bar, so the shared edges carry a single divider instead of two
+		// abutting borders. The raid stays on the fill; the boundary stays neutral in every state.
+		graphics2d.setColor(WdrTheme.BORDER);
+		graphics2d.drawRoundRect(spanStart(), 0, spanWidth(width) - 1, height - 1, ARC, ARC);
+		if (segment != Segment.LAST)
+		{
+			graphics2d.drawLine(width - 1, 0, width - 1, height - 1);
+		}
 		graphics2d.dispose();
 		super.paintComponent(graphics);
 	}

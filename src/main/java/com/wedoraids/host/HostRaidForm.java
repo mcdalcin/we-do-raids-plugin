@@ -183,13 +183,16 @@ final class HostRaidForm extends JPanel
 
 	private JPanel buildRaidTabs()
 	{
-		JPanel row = new JPanel(new GridLayout(1, 3, 4, 0));
+		// No gutters: the segments share edges so the three read as one control that takes one answer.
+		JPanel row = new JPanel(new GridLayout(1, 3, 0, 0));
 		row.setOpaque(false);
 		for (int index = 0; index < raidTabs.length; index++)
 		{
 			final int tabIndex = index;
 			final RaidType raid = index == 0 ? RaidType.TOB : index == 1 ? RaidType.COX : RaidType.TOA;
-			raidTabs[index] = new RaidTabButton(raid,
+			final RaidTabButton.Segment segment = index == 0 ? RaidTabButton.Segment.FIRST
+				: index == 1 ? RaidTabButton.Segment.MIDDLE : RaidTabButton.Segment.LAST;
+			raidTabs[index] = new RaidTabButton(raid, segment,
 				() -> raidChosen && raidCombo.getSelectedIndex() == tabIndex,
 				() -> selectRaidTab(tabIndex));
 			row.add(raidTabs[index]);
