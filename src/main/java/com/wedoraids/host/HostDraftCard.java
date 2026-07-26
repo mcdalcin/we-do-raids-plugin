@@ -33,6 +33,8 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
@@ -115,6 +117,40 @@ final class HostDraftCard extends JPanel
 	public Dimension getMaximumSize()
 	{
 		return new Dimension(Integer.MAX_VALUE, getPreferredSize().height);
+	}
+
+	/**
+	 * Paints the raid watermark between the card's fill and its contents.
+	 *
+	 * <p>Swing paints the background here, children afterwards and the border last, so art added at the
+	 * end of this method lands above the surface and below every label without touching the outline. The
+	 * band stops at the headline: the controls below it are opaque fields that would mask it into stripes
+	 * anyway, and the raid is an identity, not a texture for the whole form.
+	 */
+	@Override
+	protected void paintComponent(Graphics graphics)
+	{
+		super.paintComponent(graphics);
+		RaidWatermark.paint((Graphics2D) graphics, selectedRaid.get(), getWidth(), headlineBand());
+	}
+
+	/**
+	 * How deep the raid watermark bleeds: card top padding, the headline's own height, and the slack
+	 * already sitting between the headline and the tier combo.
+	 *
+	 * <p>Measured rather than assumed, and the slack is free. Ending the band flush with the headline
+	 * left the art 23px to live in, which is too thin a letterbox for a scene to survive the crop. The
+	 * gap below the headline is card surface that nothing else uses, so spending it costs no height at
+	 * all — the combo underneath is opaque and would mask anything past it regardless.
+	 */
+	private static final int BAND_BLEED = 5;
+
+	private int headlineBand()
+	{
+		final int headline = raidLabel.getHeight() > 0
+			? raidLabel.getHeight()
+			: raidLabel.getPreferredSize().height;
+		return getInsets().top + headline + BAND_BLEED;
 	}
 
 	// --- headline (B1) ---

@@ -33,3 +33,8 @@ Developed in partnership with the We Do Raids team; this is the community's offi
 ## License
 
 BSD 2-Clause. See [LICENSE](LICENSE).
+
+The raid artwork in `src/main/resources/com/wedoraids/` (`raid-tob.jpg`, `raid-cox.jpg`, `raid-toa.jpg`)
+is created using intellectual property belonging to Jagex Limited under the terms of Jagex's Fan Content
+Policy. This content is not endorsed by or affiliated with Jagex. The BSD licence above covers this
+project's own code and does not extend to that artwork.
