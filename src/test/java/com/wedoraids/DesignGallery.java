@@ -63,31 +63,22 @@ import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.ui.laf.RuneLiteLAF;
 
 /**
- * Design gallery: the real {@link WeDoRaidsPanel} rendered exactly as the client shows it, with
- * every state reachable on demand.
+ * Design gallery: the real {@link WeDoRaidsPanel} rendered as the client shows it, with every state
+ * reachable on demand. Test-source only, so none of it reaches the plugin jar.
  *
- * <p>Fidelity rests on three things, all of which the earlier throwaway screenshot driver got
- * wrong or skipped:
+ * <p>Run {@code ./gradlew gallery} for a window with a state list and a height picker, or
+ * {@code ./gradlew gallery --args="--capture [height]"} to write every state to /tmp/wdr-gallery and
+ * exit.
  *
- * <ul>
- *   <li><b>Look and feel.</b> {@link RuneLiteLAF#setup()} installs the client's FlatLaf theme and
- *       its UI delegates. Without it, combo boxes, checkboxes and plain buttons paint in Swing's
- *       default Metal look, and their preferred sizes differ, so vertical rhythm is wrong too.</li>
- *   <li><b>Width.</b> The sidebar is {@link PluginPanel#PANEL_WIDTH} plus
- *       {@link PluginPanel#SCROLLBAR_WIDTH}. The panel is given exactly that, via absolute bounds,
- *       so nothing can stretch it.</li>
- *   <li><b>Height.</b> Scrolling only behaves correctly at a real client height. Fixed mode is
- *       roughly 500px, which is the case that decides how many calls are visible before the
- *       scrollbar appears.</li>
- * </ul>
+ * <p>Fidelity depends on three things worth not breaking: {@link RuneLiteLAF#setup()} runs before any
+ * component exists, the panel is pinned to {@link PluginPanel#PANEL_WIDTH} plus
+ * {@link PluginPanel#SCROLLBAR_WIDTH} so nothing can stretch it, and states render at real client
+ * heights, where scrolling and overflow actually behave.
  *
- * <p>Run with {@code ./gradlew gallery}, or {@code --capture [height]} to write every state to
- * /tmp/wdr-gallery without opening a window.
- *
- * <p>This class lives on the design-gallery branch only. It reaches into private state to force
- * states that cannot be reached through the UI, and that reflection is deliberately kept off the
- * branch submitted for plugin-hub review. Rebase this branch on the main branch to pick up UI
- * changes, then run the gallery against them.
+ * <p>To add a state, extend {@link #defineStates()}. The panel's own public API covers the feed, auth
+ * and blocked cases; host-form states go through {@link PanelPreview} and
+ * {@link com.wedoraids.host.HostPreview}. The review workflow lives in
+ * {@code .opencode/skills/design-gallery/SKILL.md}.
  */
 public final class DesignGallery
 {
