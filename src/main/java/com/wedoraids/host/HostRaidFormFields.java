@@ -155,7 +155,7 @@ final class HostRaidFormFields extends JPanel
 		final String spots = card.getSpots();
 		if (tier == null || spots == null)
 		{
-			status.accept("Pick a tier and how many you need.", true);
+			status.accept("Pick a tier and open spots.", true);
 			return null;
 		}
 		fields.put("tier", tier);

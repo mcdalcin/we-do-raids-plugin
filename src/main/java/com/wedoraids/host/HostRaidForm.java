@@ -160,7 +160,7 @@ final class HostRaidForm extends JPanel
 		}
 		if (!ready)
 		{
-			setStatus("Pick a tier and how many you need.", false);
+			setStatus("Pick a tier and open spots.", false);
 			promptShown = true;
 		}
 		else if (promptShown)

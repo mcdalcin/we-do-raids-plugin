@@ -89,14 +89,23 @@ final class HostDraftCard extends JPanel
 		add(tierChooser.combo());
 		add(tierChooser.hint());
 		add(Box.createVerticalStrut(2));
-		add(HostFormLayout.pair(HostFormLayout.labeled("Need", spots), HostFormLayout.labeled("Team", team)));
+		// "Need" and "Team" named the host's own shorthand, not the values: one offers +1..+n and the
+		// other a party size, and nothing on screen said which was which while both showed a sentinel.
+		// "open" is the word the rest of the panel already uses for a free spot (a live post's "+2 open",
+		// the footer's "14 open"), so this borrows the product's language instead of inventing a label.
+		add(HostFormLayout.pair(
+			HostFormLayout.labeled("Open spots", spots),
+			HostFormLayout.labeled("Team size", team)));
 		buildRoleGroup();
 		scaleRow = HostFormLayout.labeled("Scale (0-100)", scale);
 		add(scaleRow);
 		dim(layoutState);
 		add(layoutState);
-		add(Box.createVerticalStrut(1));
-		dim(truthLine);
+		// Matches the gap a labelled group gets above it, so the routes read as their own group rather
+		// than a trailing line of the one before. Measured at 2px it was tighter than every other seam
+		// in the card while sitting on 9px of the card's own bottom padding.
+		add(Box.createVerticalStrut(3));
+		muted(truthLine);
 		add(truthLine);
 		scale.getDocument().addDocumentListener(HostFormLayout.onChange(this::fireChange));
 		setRaid(selectedRaid.get());
@@ -143,7 +152,7 @@ final class HostDraftCard extends JPanel
 		repaint();
 	}
 
-	/** Truth line (B7): the effective values not already shown above, each on its own line and dim. */
+	/** Truth line (B7): the effective values not already shown above, each on its own line and muted. */
 	void refreshTruth(String partyHub, String friendsChat)
 	{
 		final StringBuilder body = new StringBuilder();
@@ -343,6 +352,22 @@ final class HostDraftCard extends JPanel
 	{
 		label.setFont(FontManager.getRunescapeSmallFont());
 		label.setForeground(WdrTheme.TEXT_DIM);
+		label.setAlignmentX(Component.LEFT_ALIGNMENT);
+	}
+
+	/**
+	 * Tertiary ink, for detail that is present because it has to be, not because it is being read.
+	 *
+	 * <p>The joining routes are the card's least urgent content and were sharing {@link
+	 * WdrTheme#TEXT_DIM} with its field labels, its chip text and the line that says why the post
+	 * cannot go out yet. A feed card renders this same {@code ph:} value at {@link
+	 * WdrTheme#TEXT_MUTED}; matching it costs nothing and stops the draft card contradicting the feed
+	 * directly beneath it.
+	 */
+	private void muted(JLabel label)
+	{
+		label.setFont(FontManager.getRunescapeSmallFont());
+		label.setForeground(WdrTheme.TEXT_MUTED);
 		label.setAlignmentX(Component.LEFT_ALIGNMENT);
 	}
 
