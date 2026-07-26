@@ -134,12 +134,6 @@ final class HostMoreOptions extends JPanel
 		return open;
 	}
 
-	/** What clicking the toggle from closed does, callable by the gallery's preview driver. */
-	void openMoreOptions()
-	{
-		setOpen(true);
-	}
-
 	void openAndFocus(Field field)
 	{
 		setOpen(true);

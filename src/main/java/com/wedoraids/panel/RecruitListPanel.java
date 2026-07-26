@@ -300,13 +300,6 @@ final class RecruitListPanel extends JPanel
 		onJoinHub.accept(hub);
 	}
 
-	/** Package-private so the design gallery can render a joined hub without a real click. */
-	void markHubJoined(String hub)
-	{
-		joinedHubs.add(hub);
-		rebuild();
-	}
-
 	private void addVerificationNotice()
 	{
 		if (config.remoteFeedKey().trim().isEmpty())

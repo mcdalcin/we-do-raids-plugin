@@ -138,16 +138,6 @@ final class HostLivePostPanel extends JPanel
 		close();
 	}
 
-	/**
-	 * Puts the panel into the state where an undo is on offer, which normally only follows a real
-	 * update round trip. The gallery uses it to render that state directly.
-	 */
-	void offerUndo(Map<String, String> previous)
-	{
-		undoSnapshot = previous == null ? null : new LinkedHashMap<>(previous);
-		rebuildControls();
-	}
-
 	void rebuildControls()
 	{
 		view.rebuild(displayedFields, undoSnapshot != null);

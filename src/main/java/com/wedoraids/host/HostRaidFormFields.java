@@ -127,12 +127,6 @@ final class HostRaidFormFields extends JPanel
 		refreshHeadlineAndTruth();
 	}
 
-	/** Package-private so the design gallery can render the disclosure open, as clicking its toggle does. */
-	void openMoreOptions()
-	{
-		more.openMoreOptions();
-	}
-
 	void setTierEnabled(boolean enabled)
 	{
 		card.setTierEnabled(enabled);

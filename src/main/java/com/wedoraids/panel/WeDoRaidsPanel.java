@@ -139,26 +139,6 @@ public class WeDoRaidsPanel extends PluginPanel
 	}
 
 	/**
-	 * The child the design gallery drives, exposed to this package only.
-	 *
-	 * <p>Private fields are per-class rather than per-package, so a preview driver sitting alongside
-	 * this class still cannot see them. This accessor is what lets that driver put the host form into a
-	 * given state through ordinary calls instead of reflection. The feed, auth and blocked states need
-	 * nothing extra, because this panel's own public API already covers them.
-	 */
-
-	HostFormPanel hostForm()
-	{
-		return hostForm;
-	}
-
-	/** Package-private for the design gallery: renders a card whose party hub is already joined. */
-	void markHubJoined(String hub)
-	{
-		recruitList.markHubJoined(hub);
-	}
-
-	/**
 	 * Names the feed region so it starts somewhere.
 	 *
 	 * <p>Bold at {@link WdrTheme#TEXT_DIM}: heavier than the muted regular of a field label, quieter than

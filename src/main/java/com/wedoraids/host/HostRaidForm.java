@@ -237,8 +237,7 @@ final class HostRaidForm extends JPanel
 		}
 	}
 
-	/** Package-private so the design gallery can pick a raid tab the way a click does. */
-	void selectRaidTab(int index)
+	private void selectRaidTab(int index)
 	{
 		raidChosen = true;
 		raidCombo.setSelectedIndex(index);
@@ -251,12 +250,6 @@ final class HostRaidForm extends JPanel
 		fields.captureFriendsChat();
 		revalidate();
 		repaint();
-	}
-
-	/** Package-private so the design gallery can open the More disclosure the way a click does. */
-	void openMoreOptions()
-	{
-		fields.openMoreOptions();
 	}
 
 	private void refreshRaidTabs()

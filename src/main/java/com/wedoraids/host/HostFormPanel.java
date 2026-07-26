@@ -109,65 +109,6 @@ public class HostFormPanel extends JPanel
 		repaint();
 	}
 
-	/**
-	 * Enters the live post directly from a set of submitted values.
-	 *
-	 * <p>The public entry point replays whatever this panel last submitted, which a caller cannot
-	 * supply from outside. The design gallery needs to render a live post without walking the whole
-	 * submit path first, and this lets it do that while {@code lastSubmittedFields} stays private.
-	 */
-	void enterLivePost(Map<String, String> submitted, String messageId)
-	{
-		lastSubmittedFields = new LinkedHashMap<>(submitted);
-		enterLivePost(messageId);
-	}
-
-	/**
-	 * The operations below exist so the design gallery can reach a state through this panel's
-	 * own API rather than through its children. Delegating keeps {@code raidForm}, {@code livePostPanel}
-	 * and {@code inactivityGuard} private: the gallery asks the panel to do something, it does not get
-	 * handed the panel's internals.
-	 */
-	void selectRaidTab(int index)
-	{
-		raidForm.selectRaidTab(index);
-	}
-
-	void offerUndo(Map<String, String> previous)
-	{
-		livePostPanel.offerUndo(previous);
-	}
-
-	void promptInactivity()
-	{
-		inactivityGuard.showPrompt();
-	}
-
-	void openMoreOptions()
-	{
-		raidForm.openMoreOptions();
-	}
-
-	void populateDraft(Map<String, String> values)
-	{
-		raidForm.populate(values);
-	}
-
-	void submitDraft()
-	{
-		doSubmit();
-	}
-
-	void beginLiveEdit()
-	{
-		beginEdit();
-	}
-
-	void requestCloseLivePost()
-	{
-		doClose();
-	}
-
 	public void exitLivePost()
 	{
 		livePostPanel.exitLivePost();
@@ -214,11 +155,7 @@ public class HostFormPanel extends JPanel
 			: BorderFactory.createEmptyBorder(7, 10, 7, 10));
 	}
 
-	/**
-	 * Package-private rather than private so the design gallery can open and close the form the way a
-	 * click does, instead of reaching through reflection to do it.
-	 */
-	void setExpanded(boolean expanded)
+	private void setExpanded(boolean expanded)
 	{
 		this.expanded = expanded;
 		toggle.setText(expanded ? "Hide host form" : "Host raid");
@@ -348,11 +285,6 @@ public class HostFormPanel extends JPanel
 	private void decrementSpot()
 	{
 		livePostPanel.decrementSpot();
-	}
-
-	private void doClose()
-	{
-		livePostPanel.close();
 	}
 
 	private void closeForInactivity()
