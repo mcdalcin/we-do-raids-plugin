@@ -184,6 +184,12 @@ public final class DesignGallery
 			panel.setEntries(demoEntries(), 0);
 			PanelPreview.expandHostForm(panel, 1);
 		}));
+		states.add(new State("Host \u00b7 form expanded (ToA)", panel ->
+		{
+			live(panel);
+			panel.setEntries(demoEntries(), 0);
+			PanelPreview.expandHostForm(panel, 2);
+		}));
 		states.add(new State("Host \u00b7 live post, roles", panel ->
 		{
 			live(panel);
