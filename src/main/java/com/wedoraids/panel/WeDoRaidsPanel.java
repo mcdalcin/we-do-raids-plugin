@@ -38,8 +38,10 @@ import java.util.List;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.Scrollable;
+import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.PluginPanel;
 
 public class WeDoRaidsPanel extends PluginPanel
@@ -89,16 +91,24 @@ public class WeDoRaidsPanel extends PluginPanel
 		feedChrome.setLayout(new BoxLayout(feedChrome, BoxLayout.Y_AXIS));
 		feedChrome.setOpaque(false);
 		feedChrome.setAlignmentX(Component.LEFT_ALIGNMENT);
-		// Proximity, not a rule. The old 1px separator was drawn in the same BORDER used by every
-		// control outline, so directly beneath two bordered buttons it read as one more container edge
-		// rather than a change of region, and the 10px above it against 7px below grouped nothing. The
-		// filters, the counts and the cards are one block now: a wide gap opens it, tight gaps bind it.
-		feedChrome.add(Box.createVerticalStrut(18));
+		// A heading, because neither of the other two levers works here. The old 1px rule was drawn in the
+		// same BORDER as every control outline and read as one more container edge; space alone does not do
+		// it either, since the collapsed panel already opens 26px here and the boundary still reads as
+		// continuous. Both sides of that gap are a full-width bordered row on the same surface at the same
+		// inset, so a gap between them says "two spaced items", not "two regions". A named heading is the
+		// one marker that starts a section outright, and the feed was the only region in the panel without
+		// one. Space above it, none below: the heading belongs to what follows.
+		feedChrome.add(Box.createVerticalStrut(13));
+		feedChrome.add(feedHeading());
+		feedChrome.add(Box.createVerticalStrut(3));
 		feedChrome.add(filterBar);
 		filterBar.restoreSelection();
 		feedChrome.add(Box.createVerticalStrut(3));
 		feedChrome.add(recruitList.countLabel());
-		feedChrome.add(Box.createVerticalStrut(4));
+		// The list contributes its own leading padding, so the strut that reads as 4px here measured 7px
+		// against a 6px card-to-card rhythm — the counts sat further from the first card than the cards sit
+		// from each other, and bound downward to nothing. Under the rhythm, the group holds together.
+		feedChrome.add(Box.createVerticalStrut(1));
 
 		content.add(demoBanner);
 		content.add(hostForm);
@@ -140,6 +150,23 @@ public class WeDoRaidsPanel extends PluginPanel
 	HostFormPanel hostForm()
 	{
 		return hostForm;
+	}
+
+	/**
+	 * Names the feed region so it starts somewhere.
+	 *
+	 * <p>Bold at {@link WdrTheme#TEXT_DIM}: heavier than the muted regular of a field label, quieter than
+	 * a card's raid-hued title, so it reads as structure rather than as either. "Calls" is the word the
+	 * rest of the product uses for a recruitment post. Exactly one heading exists in the panel, which is
+	 * what keeps it a named section rather than an eyebrow stamped over everything.
+	 */
+	private static JLabel feedHeading()
+	{
+		JLabel heading = new JLabel("Open calls");
+		heading.setFont(FontManager.getRunescapeBoldFont());
+		heading.setForeground(WdrTheme.TEXT_DIM);
+		heading.setAlignmentX(Component.LEFT_ALIGNMENT);
+		return heading;
 	}
 
 	/** Fills the viewport's width so card width never depends on card content. */
