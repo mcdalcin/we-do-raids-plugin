@@ -206,10 +206,10 @@ final class HostRaidForm extends JPanel
 	{
 		// The one primary action of this view, so it carries the accent; cancel stays a soft action.
 		postButton.addActionListener(e -> submit.run());
-		fullWidth(postButton);
+		HostFormLayout.fullWidth(postButton);
 		details.add(postButton);
 		cancelEditButton.addActionListener(e -> cancelEdit.run());
-		fullWidth(cancelEditButton);
+		HostFormLayout.fullWidth(cancelEditButton);
 		cancelEditButton.setVisible(false);
 		details.add(Box.createVerticalStrut(4));
 		details.add(cancelEditButton);
@@ -222,12 +222,6 @@ final class HostRaidForm extends JPanel
 		// lines whose widest inks to column 199, a clear margin inside the 205px measure, with no clip.
 		status.setMaximumSize(new Dimension(STATUS_MAX_WIDTH, Integer.MAX_VALUE));
 		details.add(status);
-	}
-
-	private static void fullWidth(javax.swing.JComponent component)
-	{
-		component.setAlignmentX(Component.LEFT_ALIGNMENT);
-		component.setMaximumSize(new Dimension(Integer.MAX_VALUE, component.getPreferredSize().height));
 	}
 
 	private RaidType selectedRaid()
@@ -257,6 +251,12 @@ final class HostRaidForm extends JPanel
 		fields.captureFriendsChat();
 		revalidate();
 		repaint();
+	}
+
+	/** Package-private so the design gallery can open the More disclosure the way a click does. */
+	void openMoreOptions()
+	{
+		fields.openMoreOptions();
 	}
 
 	private void refreshRaidTabs()

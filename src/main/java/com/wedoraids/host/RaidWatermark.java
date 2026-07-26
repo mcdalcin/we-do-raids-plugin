@@ -35,6 +35,7 @@ import java.awt.MultipleGradientPaint;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.util.EnumMap;
+import java.util.Locale;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.client.util.ImageUtil;
@@ -70,7 +71,7 @@ final class RaidWatermark
 	/** Resource name for a raid, e.g. {@code raid-tob.jpg}. */
 	private static String resourceName(RaidType raid)
 	{
-		return "raid-" + raid.getDisplayName().toLowerCase(java.util.Locale.ROOT) + ".jpg";
+		return "raid-" + raid.getDisplayName().toLowerCase(Locale.ROOT) + ".jpg";
 	}
 
 	/** Art for a raid, or null when none ships. Looked up once and remembered, misses included. */

@@ -29,10 +29,12 @@ import com.wedoraids.ui.WdrButton;
 import com.wedoraids.ui.WdrTheme;
 import com.wedoraids.ui.WrappedText;
 import java.awt.Component;
+import java.awt.Rectangle;
 import javax.swing.BoxLayout;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 import net.runelite.client.ui.FontManager;
 
 /**
@@ -120,6 +122,9 @@ final class HostMoreOptions extends JPanel
 		open = value;
 		content.setVisible(value);
 		toggle.setText(value ? "Fewer options" : "More options");
+		// The draft card's truth line mirrors these fields while they are hidden, so toggling the
+		// disclosure changes what the card should show and has to refresh it like an edit does.
+		onChange.run();
 		revalidate();
 		repaint();
 	}
@@ -129,10 +134,28 @@ final class HostMoreOptions extends JPanel
 		return open;
 	}
 
+	/** What clicking the toggle from closed does, callable by the gallery's preview driver. */
+	void openMoreOptions()
+	{
+		setOpen(true);
+	}
+
 	void openAndFocus(Field field)
 	{
 		setOpen(true);
-		fieldFor(field).requestFocusInWindow();
+		final JTextField target = fieldFor(field);
+		// The edge is the association the status line cannot carry from five fields away.
+		WdrTheme.flagInvalid(target);
+		// The validation that lands here fires from the submit button near the bottom of a viewport
+		// that can be ~500px tall, and opening the disclosure grows the form past it. Without a scroll,
+		// the field the host must fix and the error explaining why both sit below the fold, so the
+		// click appears to do nothing. Deferred, because the field was invisible a moment ago: its
+		// bounds only exist after the revalidate this open queued has run.
+		SwingUtilities.invokeLater(() ->
+		{
+			target.scrollRectToVisible(new Rectangle(0, 0, target.getWidth(), target.getHeight()));
+			target.requestFocusInWindow();
+		});
 	}
 
 	private JTextField fieldFor(Field field)

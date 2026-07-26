@@ -15,7 +15,7 @@ invisible in code review and obvious in a capture — a host form that overflowe
 ## Render it
 
 ```bash
-./gradlew gallery --args="--capture 503"     # writes every state to /tmp/wdr-gallery
+./gradlew gallery --args="--capture 503"     # writes every state to build/gallery
 ```
 
 Then read the PNGs. They are small (242px wide) so reading several at once is cheap.
@@ -64,7 +64,7 @@ the numbers catch what the eye forgives. Read pixels straight out of the capture
 
 ```python
 from PIL import Image
-im = Image.open("/tmp/wdr-gallery/00-feed-demo-calls-503.png").convert("RGB")
+im = Image.open("build/gallery/00-feed-demo-calls-503.png").convert("RGB")
 print(im.getpixel((60, 186)))          # exact rendered colour, no guessing from source
 ```
 

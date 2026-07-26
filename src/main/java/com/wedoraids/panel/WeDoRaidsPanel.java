@@ -152,6 +152,12 @@ public class WeDoRaidsPanel extends PluginPanel
 		return hostForm;
 	}
 
+	/** Package-private for the design gallery: renders a card whose party hub is already joined. */
+	void markHubJoined(String hub)
+	{
+		recruitList.markHubJoined(hub);
+	}
+
 	/**
 	 * Names the feed region so it starts somewhere.
 	 *

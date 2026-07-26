@@ -28,13 +28,14 @@ import com.wedoraids.WeDoRaidsConfig;
 import com.wedoraids.bridge.BridgeStatus;
 import com.wedoraids.feed.RaidType;
 import com.wedoraids.feed.RecruitEntry;
+import com.wedoraids.ui.SplitGrid;
 import com.wedoraids.ui.WdrButton;
 import com.wedoraids.ui.WdrScrollBarUI;
 import com.wedoraids.ui.WdrTheme;
 import com.wedoraids.ui.WrappedText;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.GridLayout;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -299,6 +300,13 @@ final class RecruitListPanel extends JPanel
 		onJoinHub.accept(hub);
 	}
 
+	/** Package-private so the design gallery can render a joined hub without a real click. */
+	void markHubJoined(String hub)
+	{
+		joinedHubs.add(hub);
+		rebuild();
+	}
+
 	private void addVerificationNotice()
 	{
 		if (config.remoteFeedKey().trim().isEmpty())
@@ -344,7 +352,7 @@ final class RecruitListPanel extends JPanel
 		keyField.setMaximumSize(new Dimension(Integer.MAX_VALUE, keyField.getPreferredSize().height));
 		keyEntry.add(keyField);
 		keyEntry.add(Box.createVerticalStrut(6));
-		JPanel buttons = new JPanel(new GridLayout(1, 2, 6, 0));
+		JPanel buttons = new JPanel(new SplitGrid(6, 0));
 		buttons.setOpaque(false);
 		WdrButton save = new WdrButton("Save key", WdrButton.Variant.PRIMARY);
 		save.addActionListener(e -> saveKey());
@@ -433,7 +441,7 @@ final class RecruitListPanel extends JPanel
 		return (int) entries.stream().filter(entry -> entry.getRaidType() == raid).count();
 	}
 
-	private static String hex(java.awt.Color color)
+	private static String hex(Color color)
 	{
 		return String.format("#%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue());
 	}

@@ -24,6 +24,9 @@
  */
 package com.wedoraids.feed;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public final class RecruitDisplay
 {
 	private static final int[] WDR_TIER_KC_COX = {0, 5, 25, 75, -1, 500};
@@ -150,9 +153,9 @@ public final class RecruitDisplay
 	}
 
 	/** Lowercase fragments the card already renders, longest first so "mdps" cannot eat "dps". */
-	private static java.util.List<String> knownTokens(RecruitEntry entry)
+	private static List<String> knownTokens(RecruitEntry entry)
 	{
-		final java.util.List<String> tokens = new java.util.ArrayList<>();
+		final List<String> tokens = new ArrayList<>();
 		addToken(tokens, entry.getTier());
 		addToken(tokens, entry.getMode());
 		addToken(tokens, entry.getSpots());
@@ -180,7 +183,7 @@ public final class RecruitDisplay
 		return tokens;
 	}
 
-	private static void addToken(java.util.List<String> tokens, String value)
+	private static void addToken(List<String> tokens, String value)
 	{
 		if (value == null)
 		{

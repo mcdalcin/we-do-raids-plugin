@@ -123,7 +123,7 @@ public class HostFormPanel extends JPanel
 	}
 
 	/**
-	 * The three operations below exist so the design gallery can reach a state through this panel's
+	 * The operations below exist so the design gallery can reach a state through this panel's
 	 * own API rather than through its children. Delegating keeps {@code raidForm}, {@code livePostPanel}
 	 * and {@code inactivityGuard} private: the gallery asks the panel to do something, it does not get
 	 * handed the panel's internals.
@@ -141,6 +141,31 @@ public class HostFormPanel extends JPanel
 	void promptInactivity()
 	{
 		inactivityGuard.showPrompt();
+	}
+
+	void openMoreOptions()
+	{
+		raidForm.openMoreOptions();
+	}
+
+	void populateDraft(Map<String, String> values)
+	{
+		raidForm.populate(values);
+	}
+
+	void submitDraft()
+	{
+		doSubmit();
+	}
+
+	void beginLiveEdit()
+	{
+		beginEdit();
+	}
+
+	void requestCloseLivePost()
+	{
+		doClose();
 	}
 
 	public void exitLivePost()

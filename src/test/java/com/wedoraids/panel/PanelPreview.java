@@ -25,6 +25,7 @@
 package com.wedoraids.panel;
 
 import com.wedoraids.host.HostPreview;
+import java.util.Map;
 
 /**
  * Reaches the host form through {@link WeDoRaidsPanel} for the design gallery, without reflection.
@@ -46,6 +47,49 @@ public final class PanelPreview
 	public static void expandHostForm(WeDoRaidsPanel panel, int raidTab)
 	{
 		HostPreview.expand(panel.hostForm(), raidTab);
+	}
+
+	/** Opens the host form on a raid tab with the More options disclosure expanded. */
+	public static void expandHostFormWithMoreOptions(WeDoRaidsPanel panel, int raidTab)
+	{
+		HostPreview.expandWithMoreOptions(panel.hostForm(), raidTab);
+	}
+
+	/** Opens the host form on a raid tab and fills the draft. */
+	public static void expandHostFormFilled(WeDoRaidsPanel panel, int raidTab, Map<String, String> values)
+	{
+		HostPreview.expandFilled(panel.hostForm(), raidTab, values);
+	}
+
+	/** A filled draft with the More options disclosure expanded. */
+	public static void expandHostFormFilledWithMoreOptions(WeDoRaidsPanel panel, int raidTab,
+		Map<String, String> values)
+	{
+		HostPreview.expandFilledWithMoreOptions(panel.hostForm(), raidTab, values);
+	}
+
+	/** Clicks Post to Discord on the current draft; the panel's actions decide the reply. */
+	public static void submitHostForm(WeDoRaidsPanel panel)
+	{
+		HostPreview.submitDraft(panel.hostForm());
+	}
+
+	/** A live post reopened for editing, as clicking "Edit details" would. */
+	public static void editLivePost(WeDoRaidsPanel panel, String spots, String roles)
+	{
+		HostPreview.editLivePost(panel.hostForm(), spots, roles);
+	}
+
+	/** Clicks "Close raid" on a live post; the panel's actions decide the reply. */
+	public static void closeLivePost(WeDoRaidsPanel panel, String spots, String roles)
+	{
+		HostPreview.closeLivePost(panel.hostForm(), spots, roles);
+	}
+
+	/** Renders a card whose party hub is already joined. */
+	public static void markHubJoined(WeDoRaidsPanel panel, String hub)
+	{
+		panel.markHubJoined(hub);
 	}
 
 	/** Renders a live post, optionally with an undo on offer. */

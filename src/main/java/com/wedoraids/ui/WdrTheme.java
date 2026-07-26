@@ -28,6 +28,9 @@ import java.awt.Color;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.border.Border;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.text.JTextComponent;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
@@ -140,6 +143,18 @@ public final class WdrTheme
 	 */
 	public static final Color ERROR_PRESSED = new Color(56, 26, 26);
 
+	/**
+	 * The edge and inset that make a panel read as one card rather than one of many.
+	 *
+	 * <p>A surface step alone cannot hold a card: against the panel canvas {@link #CARD} measures
+	 * 1.14:1, below seeing, so an unbordered card dissolves into the canvas while the railed feed
+	 * cards beside it stay legible. A neutral outline restores the container without borrowing the
+	 * feed's list semantics — railed means "one of many", outlined means "one thing".
+	 */
+	public static final Border CARD_BORDER = BorderFactory.createCompoundBorder(
+		BorderFactory.createLineBorder(BORDER),
+		BorderFactory.createEmptyBorder(8, 9, 9, 9));
+
 	private WdrTheme()
 	{
 	}
@@ -161,9 +176,56 @@ public final class WdrTheme
 		f.setBackground(FIELD);
 		f.setForeground(TEXT);
 		f.setCaretColor(TEXT);
-		f.setBorder(BorderFactory.createCompoundBorder(
-			BorderFactory.createLineBorder(BORDER),
-			BorderFactory.createEmptyBorder(2, 4, 2, 4)));
+		f.setBorder(fieldBorder(BORDER));
+	}
+
+	/**
+	 * Marks a field whose value failed validation, and clears itself on the first edit.
+	 *
+	 * <p>The status line that names the failure renders under the submit button, which can be five
+	 * fields and a fold away from the field it names — measured, the World field and its error
+	 * cannot share a 503px viewport. The edge is the association the message alone cannot carry:
+	 * ERROR chroma already means failure and nothing else in this panel, and a field border is the
+	 * one place that hue was not yet spoken for. It restores {@link #styleField}'s border the
+	 * moment the host types, because a mark that outlives the mistake becomes noise.
+	 */
+	public static void flagInvalid(JTextComponent f)
+	{
+		f.setBorder(fieldBorder(ERROR));
+		f.getDocument().addDocumentListener(new DocumentListener()
+		{
+			private void clear()
+			{
+				f.getDocument().removeDocumentListener(this);
+				f.setBorder(fieldBorder(BORDER));
+			}
+
+			@Override
+			public void insertUpdate(DocumentEvent event)
+			{
+				clear();
+			}
+
+			@Override
+			public void removeUpdate(DocumentEvent event)
+			{
+				clear();
+			}
+
+			@Override
+			public void changedUpdate(DocumentEvent event)
+			{
+				clear();
+			}
+		});
+	}
+
+	/** The shared field outline, tinted by state: {@link #BORDER} at rest, {@link #ERROR} when invalid. */
+	private static Border fieldBorder(Color line)
+	{
+		return BorderFactory.createCompoundBorder(
+			BorderFactory.createLineBorder(line),
+			BorderFactory.createEmptyBorder(2, 4, 2, 4));
 	}
 
 	public static void styleCombo(JComboBox<?> c)

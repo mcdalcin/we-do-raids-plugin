@@ -24,12 +24,12 @@
  */
 package com.wedoraids.host;
 
+import com.wedoraids.ui.SplitGrid;
 import com.wedoraids.ui.WdrTheme;
 import com.wedoraids.ui.WrappedText;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.GridLayout;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JComponent;
@@ -104,7 +104,7 @@ final class HostFormLayout
 
 	static JPanel pair(JPanel left, JPanel right)
 	{
-		final JPanel pair = new JPanel(new GridLayout(1, 2, 6, 0));
+		final JPanel pair = new JPanel(new SplitGrid(6, 0));
 		pair.setOpaque(false);
 		pair.add(left);
 		pair.add(right);

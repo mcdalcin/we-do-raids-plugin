@@ -53,6 +53,47 @@ public final class HostPreview
 		form.selectRaidTab(raidTab);
 	}
 
+	/** Opens the form on a raid tab with the More options disclosure expanded, as clicking both would. */
+	public static void expandWithMoreOptions(HostFormPanel form, int raidTab)
+	{
+		expand(form, raidTab);
+		form.openMoreOptions();
+	}
+
+	/** Opens the form on a raid tab and fills the draft, as picking those values by hand would. */
+	public static void expandFilled(HostFormPanel form, int raidTab, Map<String, String> values)
+	{
+		expand(form, raidTab);
+		form.populateDraft(values);
+	}
+
+	/** A filled draft with the More options disclosure expanded. */
+	public static void expandFilledWithMoreOptions(HostFormPanel form, int raidTab, Map<String, String> values)
+	{
+		expandFilled(form, raidTab, values);
+		form.openMoreOptions();
+	}
+
+	/** Clicks Post to Discord on the current draft; the panel's own actions decide the reply. */
+	public static void submitDraft(HostFormPanel form)
+	{
+		form.submitDraft();
+	}
+
+	/** A live post reopened for editing, exactly as clicking "Edit details" would. */
+	public static void editLivePost(HostFormPanel form, String spots, String roles)
+	{
+		livePost(form, spots, roles, false);
+		form.beginLiveEdit();
+	}
+
+	/** Clicks "Close raid" on a live post; the panel's actions decide the reply. */
+	public static void closeLivePost(HostFormPanel form, String spots, String roles)
+	{
+		livePost(form, spots, roles, false);
+		form.requestCloseLivePost();
+	}
+
 	/**
 	 * Renders a live post for a ToB raid.
 	 *

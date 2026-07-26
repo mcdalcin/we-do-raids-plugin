@@ -95,7 +95,9 @@ final class RecruitPanelHeader extends JPanel
 		bar.setOpaque(false);
 		bar.setBorder(BorderFactory.createCompoundBorder(
 			BorderFactory.createMatteBorder(1, 0, 0, 0, WdrTheme.BORDER),
-			BorderFactory.createEmptyBorder(5, 2, 0, 2)));
+			// No horizontal inset: the label joins the x=10 rail that the heading, the counts and every
+			// card rail share, instead of being the one line of text 2px off it.
+			BorderFactory.createEmptyBorder(5, 0, 0, 0)));
 		bar.add(statusLabel, BorderLayout.WEST);
 		return bar;
 	}
@@ -136,7 +138,7 @@ final class RecruitPanelHeader extends JPanel
 	{
 		final JPanel banner = new JPanel(new BorderLayout());
 		banner.setOpaque(false);
-		banner.setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));
+		banner.setBorder(BorderFactory.createEmptyBorder(2, 0, 2, 0));
 		final JLabel label = new JLabel("Demo data, not live");
 		label.setForeground(WdrTheme.ERROR);
 		label.setFont(FontManager.getRunescapeSmallFont());

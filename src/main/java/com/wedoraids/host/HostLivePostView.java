@@ -24,23 +24,19 @@
  */
 package com.wedoraids.host;
 
-import com.wedoraids.feed.RaidType;
+import com.wedoraids.ui.SplitGrid;
 import com.wedoraids.ui.WdrButton;
 import com.wedoraids.ui.WdrTheme;
 import com.wedoraids.ui.WrappedText;
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.GridLayout;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
-import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
-import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import net.runelite.client.ui.FontManager;
@@ -89,7 +85,7 @@ final class HostLivePostView extends JPanel
 		JLabel title = new JLabel("Your " + raidLabel(fields.get("raid")) + " raid is live");
 		title.setFont(FontManager.getRunescapeSmallFont());
 		title.setForeground(WdrTheme.TEXT);
-		fullWidth(title);
+		HostFormLayout.fullWidth(title);
 		card.add(title);
 		final String summary = summary(fields);
 		if (!summary.isEmpty())
@@ -124,7 +120,7 @@ final class HostLivePostView extends JPanel
 			// stack of five, all claiming the same rank as marking a role filled.
 			WdrButton undoButton = new WdrButton("Undo last change", WdrButton.Variant.QUIET);
 			undoButton.addActionListener(e -> undo.run());
-			fullWidth(undoButton);
+			HostFormLayout.fullWidth(undoButton);
 			card.add(undoButton);
 		}
 		card.add(Box.createVerticalStrut(10));
@@ -144,7 +140,10 @@ final class HostLivePostView extends JPanel
 		appendSummary(summary, fields.get("tier"));
 		final String world = fields.get("world");
 		appendSummary(summary, world == null || world.isEmpty() ? null : "W" + world);
-		appendSummary(summary, fields.get("partyHub"));
+		// Labelled the way every other surface renders this value ("ph: catdog" on feed cards and the
+		// draft card's truth line). Bare, the passphrase read as an unexplained word on the host's own card.
+		final String hub = fields.get("partyHub");
+		appendSummary(summary, hub == null || hub.isEmpty() ? null : "ph: " + hub);
 		return summary.toString();
 	}
 
@@ -182,38 +181,20 @@ final class HostLivePostView extends JPanel
 		JPanel card = new JPanel();
 		card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
 		card.setBackground(WdrTheme.CARD);
-		card.setBorder(BorderFactory.createCompoundBorder(
-			BorderFactory.createLineBorder(WdrTheme.BORDER),
-			BorderFactory.createEmptyBorder(8, 9, 9, 9)));
+		card.setBorder(WdrTheme.CARD_BORDER);
 		card.setAlignmentX(Component.LEFT_ALIGNMENT);
 		return card;
 	}
 
-	private static Color raidColor(String code)
-	{
-		if (code != null)
-		{
-			try
-			{
-				return RaidType.valueOf(code.toUpperCase()).getColor();
-			}
-			catch (IllegalArgumentException ignored)
-			{
-			}
-		}
-		return RaidType.OTHER.getColor();
-	}
-
 	private static JLabel spotsChip(String spots)
 	{
+		// Data, not a control. Boxed in FIELD fill with a BORDER outline this was pixel-identical to the
+		// resting GHOST buttons directly beneath it, and everywhere else in the panel that grammar means
+		// "pressable". The count keeps its rank through weight instead: the card's one glanceable number,
+		// bold, in primary ink, with no box to claim an affordance it does not have.
 		JLabel chip = new JLabel(chipText(spots));
-		chip.setFont(FontManager.getRunescapeSmallFont());
+		chip.setFont(FontManager.getRunescapeBoldFont());
 		chip.setForeground(WdrTheme.TEXT);
-		chip.setOpaque(true);
-		chip.setBackground(WdrTheme.FIELD);
-		chip.setBorder(BorderFactory.createCompoundBorder(
-			BorderFactory.createLineBorder(WdrTheme.BORDER),
-			BorderFactory.createEmptyBorder(1, 8, 1, 8)));
 		return chip;
 	}
 
@@ -235,7 +216,7 @@ final class HostLivePostView extends JPanel
 	{
 		card.add(hint("Mark role filled"));
 		card.add(Box.createVerticalStrut(5));
-		JPanel grid = new JPanel(new GridLayout(0, Math.min(2, roles.size()), 5, 5));
+		JPanel grid = new JPanel(new SplitGrid(5, 5));
 		grid.setOpaque(false);
 		for (String role : roles)
 		{
@@ -243,28 +224,29 @@ final class HostLivePostView extends JPanel
 			button.addActionListener(e -> fillRole.accept(role));
 			grid.add(button);
 		}
-		fullWidth(grid);
+		HostFormLayout.fullWidth(grid);
 		card.add(grid);
 		card.add(Box.createVerticalStrut(6));
 		WdrButton other = new WdrButton("-1 other spot", WdrButton.Variant.GHOST);
 		other.addActionListener(e -> decrementSpot.run());
-		fullWidth(other);
+		HostFormLayout.fullWidth(other);
 		card.add(other);
 	}
 
 	private void addSpotControl(JPanel card)
 	{
-		card.add(hint("Open spots"));
-		card.add(Box.createVerticalStrut(5));
+		// No hint line. "Open spots" restated the chip two lines up ("+3 open") in quieter ink, and the
+		// roles branch's hint earns its line by naming the action ("Mark role filled") where the buttons
+		// name roles. "-1 spot" already names its action, so a label above it had nothing left to say.
 		WdrButton minusSpot = new WdrButton("-1 spot", WdrButton.Variant.PRIMARY);
 		minusSpot.addActionListener(e -> decrementSpot.run());
-		fullWidth(minusSpot);
+		HostFormLayout.fullWidth(minusSpot);
 		card.add(minusSpot);
 	}
 
 	private void addActionButtons(JPanel card)
 	{
-		JPanel row = new JPanel(new GridLayout(1, 2, 6, 0));
+		JPanel row = new JPanel(new SplitGrid(6, 0));
 		row.setOpaque(false);
 		// A detour, not a peer of closing the raid. Boxed at GHOST it matched "Close raid" exactly, so a
 		// terminal action and a way to amend one read as the same weight of choice.
@@ -274,7 +256,7 @@ final class HostLivePostView extends JPanel
 		WdrButton closeButton = new WdrButton("Close raid", WdrButton.Variant.DANGER);
 		closeButton.addActionListener(e -> close.run());
 		row.add(closeButton);
-		fullWidth(row);
+		HostFormLayout.fullWidth(row);
 		card.add(row);
 	}
 
@@ -301,7 +283,7 @@ final class HostLivePostView extends JPanel
 		JLabel hint = new JLabel(text);
 		hint.setFont(FontManager.getRunescapeSmallFont());
 		hint.setForeground(WdrTheme.TEXT_DIM);
-		fullWidth(hint);
+		HostFormLayout.fullWidth(hint);
 		return hint;
 	}
 
@@ -313,12 +295,6 @@ final class HostLivePostView extends JPanel
 		row.setAlignmentX(Component.LEFT_ALIGNMENT);
 		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, row.getPreferredSize().height));
 		return row;
-	}
-
-	private static void fullWidth(JComponent component)
-	{
-		component.setAlignmentX(Component.LEFT_ALIGNMENT);
-		component.setMaximumSize(new Dimension(Integer.MAX_VALUE, component.getPreferredSize().height));
 	}
 
 	private static String raidLabel(String code)

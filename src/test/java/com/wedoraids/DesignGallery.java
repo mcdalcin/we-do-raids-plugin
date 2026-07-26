@@ -41,9 +41,12 @@ import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -67,7 +70,7 @@ import net.runelite.client.ui.laf.RuneLiteLAF;
  * reachable on demand. Test-source only, so none of it reaches the plugin jar.
  *
  * <p>Run {@code ./gradlew gallery} for a window with a state list and a height picker, or
- * {@code ./gradlew gallery --args="--capture [height]"} to write every state to /tmp/wdr-gallery and
+ * {@code ./gradlew gallery --args="--capture [height]"} to write every state to {@code build/gallery}
  * exit.
  *
  * <p>Fidelity depends on three things worth not breaking: {@link RuneLiteLAF#setup()} runs before any
@@ -83,7 +86,7 @@ import net.runelite.client.ui.laf.RuneLiteLAF;
 public final class DesignGallery
 {
 	private static final int OUTER_WIDTH = PluginPanel.PANEL_WIDTH + PluginPanel.SCROLLBAR_WIDTH;
-	private static final File OUT = new File("/tmp/wdr-gallery");
+	private static final File OUT = new File("build/gallery");
 
 	/** Client heights worth checking: fixed mode, 720p, 1080p, 1440p sidebars. */
 	private static final Integer[] HEIGHTS = {503, 720, 1080, 1440};
@@ -181,6 +184,12 @@ public final class DesignGallery
 			panel.setEntries(demoEntries(), 0);
 			PanelPreview.expandHostForm(panel, 2);
 		}));
+		states.add(new State("Host · more options open (CoX)", panel ->
+		{
+			live(panel);
+			panel.setEntries(demoEntries(), 0);
+			PanelPreview.expandHostFormWithMoreOptions(panel, 1);
+		}));
 		states.add(new State("Host \u00b7 live post, roles", panel ->
 		{
 			live(panel);
@@ -212,6 +221,77 @@ public final class DesignGallery
 			PanelPreview.livePost(panel, "+2", "mdps, rdps", false);
 			PanelPreview.promptInactivity(panel);
 		}));
+		states.add(new State("Feed · demo data", panel ->
+		{
+			live(panel);
+			panel.setEntries(demoEntries(), 0);
+		}, "", true, false));
+		states.add(new State("Host · edit details", panel ->
+		{
+			live(panel);
+			panel.setEntries(demoEntries(), 0);
+			PanelPreview.editLivePost(panel, "+2", "mdps, rdps");
+		}));
+		states.add(new State("Host · post failed", panel ->
+		{
+			live(panel);
+			panel.setEntries(demoEntries(), 0);
+			PanelPreview.expandHostFormFilled(panel, 0, tobDraft());
+			PanelPreview.submitHostForm(panel);
+		}, "", false, true));
+		states.add(new State("Host · layout scouted (CoX)", panel ->
+		{
+			live(panel);
+			panel.setEntries(demoEntries(), 0);
+			PanelPreview.expandHostFormFilledWithMoreOptions(panel, 1, coxDraft());
+		}));
+		states.add(new State("Feed · no matches", panel ->
+		{
+			live(panel);
+			panel.setEntries(onlyRaid(demoEntries(), RaidType.TOB), 0);
+		}, "", false, false, "CoX"));
+		states.add(new State("Feed · hub joined", panel ->
+		{
+			live(panel);
+			panel.setEntries(demoEntries(), 0);
+			PanelPreview.markHubJoined(panel, "olm");
+		}));
+		states.add(new State("Feed · stress content", panel ->
+		{
+			live(panel);
+			panel.setEntries(stressEntries(), 0);
+		}));
+		states.add(new State("Host · posting…", panel ->
+		{
+			live(panel);
+			panel.setEntries(demoEntries(), 0);
+			PanelPreview.expandHostFormFilled(panel, 0, tobDraft());
+			PanelPreview.submitHostForm(panel);
+		}));
+		states.add(new State("Host · world invalid", panel ->
+		{
+			live(panel);
+			panel.setEntries(demoEntries(), 0);
+			final Map<String, String> draft = tobDraft();
+			draft.put("world", "4l6");
+			PanelPreview.expandHostFormFilled(panel, 0, draft);
+			PanelPreview.submitHostForm(panel);
+		}));
+		states.add(new State("Host · scale invalid", panel ->
+		{
+			live(panel);
+			panel.setEntries(demoEntries(), 0);
+			final Map<String, String> draft = coxDraft();
+			draft.put("scale", "150");
+			PanelPreview.expandHostFormFilled(panel, 1, draft);
+			PanelPreview.submitHostForm(panel);
+		}));
+		states.add(new State("Host · close failed", panel ->
+		{
+			live(panel);
+			panel.setEntries(demoEntries(), 0);
+			PanelPreview.closeLivePost(panel, "+2", "mdps, rdps");
+		}, "", false, true));
 	}
 
 	private void show()
@@ -236,7 +316,7 @@ public final class DesignGallery
 			}
 		});
 
-		JButton captureAll = new JButton("Capture all to /tmp/wdr-gallery");
+		JButton captureAll = new JButton("Capture all to " + OUT);
 		captureAll.addActionListener(event -> captureAll());
 		heightPicker.setSelectedItem(503);
 		heightPicker.addActionListener(event -> render());
@@ -281,7 +361,7 @@ public final class DesignGallery
 	/** Rebuilds the panel from scratch so no state leaks between selections. */
 	private WeDoRaidsPanel build(State state, int height)
 	{
-		WeDoRaidsPanel panel = newPanel(state.key);
+		WeDoRaidsPanel panel = newPanel(state);
 		state.apply.accept(panel);
 		panel.setBounds(0, 0, OUTER_WIDTH, height);
 		layoutTree(panel);
@@ -360,17 +440,78 @@ public final class DesignGallery
 		return out;
 	}
 
+	/** A submittable ToB draft, the values a host would have picked by hand. */
+	private static Map<String, String> tobDraft()
+	{
+		final Map<String, String> values = new LinkedHashMap<>();
+		values.put("raid", "TOB");
+		values.put("tier", "Standard");
+		values.put("spots", "+2");
+		values.put("size", "4");
+		values.put("world", "416");
+		values.put("partyHub", "catdog");
+		return values;
+	}
 
+	/** A CoX draft whose tier keeps the scouted-layout row applicable (non-CM). */
+	private static Map<String, String> coxDraft()
+	{
+		final Map<String, String> values = new LinkedHashMap<>();
+		values.put("raid", "COX");
+		values.put("tier", "Scaled");
+		values.put("spots", "+2");
+		values.put("size", "5");
+		values.put("world", "416");
+		values.put("partyHub", "catdog");
+		values.put("fc", "Zezima");
+		return values;
+	}
 
+	/**
+	 * Entries at the panel's limits, every value the bridge could really send at its longest: a
+	 * maximal detail line, wall-of-text messages, a 12-character RSN, an hours-old timestamp and a
+	 * long party hub. The demo feed shows the panel at its best; this state shows it surviving.
+	 */
+	private static List<RecruitEntry> stressEntries()
+	{
+		final Instant now = Instant.now();
+		return Arrays.asList(
+			new RecruitEntry("Longest Name", "WDR ToB", RaidType.TOB, "HM Exp", "100+ kc", "+3",
+				"mdps/rdps/nfrz/sfrz", "5 man", 520, "eu", "sapphireglacier", 903, "RAID",
+				"looking for experienced hard mode five man for hmt6 grind tonight, scythe and 100+ hm kc"
+					+ " required, no mercy splits, bring own supplies, ph sapphireglacier",
+				now.minus(Duration.ofMinutes(65))),
+			new RecruitEntry("Yappity Yap", "WDR CoX", RaidType.COX, null, null, null, null, null, 0, null,
+				null, 12, "LFG",
+				"hey everyone im back after a long break and looking to get into cox again, did a few normals"
+					+ " years ago but pretty rusty now, happy to bring supplies and listen, can raid most"
+					+ " evenings after 8pm uk time",
+				now.minus(Duration.ofMinutes(1))),
+			new RecruitEntry("Kit Chaser", "WDR ToA", RaidType.TOA, "450+", "450-540 invo", "+1", null,
+				"trio", 301, null, "verylongpartyhubname", 618, "RAID",
+				"expert trio 450+ w301 ph: verylongpartyhubname", now));
+	}
 
-	private static WeDoRaidsPanel newPanel(String key)
+	private static WeDoRaidsPanel newPanel(State state)
 	{
 		final WeDoRaidsConfig config = new WeDoRaidsConfig()
 		{
 			@Override
 			public String remoteFeedKey()
 			{
-				return key;
+				return state.key;
+			}
+
+			@Override
+			public boolean demoData()
+			{
+				return state.demo;
+			}
+
+			@Override
+			public String lastRaidFilter()
+			{
+				return state.raidFilter;
 			}
 		};
 		final HostFormPanel.HostActions actions = new HostFormPanel.HostActions()
@@ -378,16 +519,29 @@ public final class DesignGallery
 			@Override
 			public void submit(Map<String, String> fields, Consumer<String> status)
 			{
+				if (state.bridgeDown)
+				{
+					// The reply the real bridge client gives when the request cannot go out.
+					status.accept("Could not reach the bridge.");
+				}
 			}
 
 			@Override
 			public void update(Map<String, String> fields, Consumer<String> status)
 			{
+				if (state.bridgeDown)
+				{
+					status.accept("Could not reach the bridge.");
+				}
 			}
 
 			@Override
 			public void close(Map<String, String> fields, Consumer<String> status)
 			{
+				if (state.bridgeDown)
+				{
+					status.accept("Could not reach the bridge.");
+				}
 			}
 		};
 		final HostDependencies host = new HostDependencies(actions, () -> 416, () -> "Tekton",
@@ -427,17 +581,34 @@ public final class DesignGallery
 		private final String name;
 		private final Consumer<WeDoRaidsPanel> apply;
 		private final String key;
+		private final boolean demo;
+		private final boolean bridgeDown;
+		private final String raidFilter;
 
 		private State(String name, Consumer<WeDoRaidsPanel> apply)
 		{
-			this(name, apply, "");
+			this(name, apply, "", false, false, "All raids");
 		}
 
 		private State(String name, Consumer<WeDoRaidsPanel> apply, String key)
 		{
+			this(name, apply, key, false, false, "All raids");
+		}
+
+		private State(String name, Consumer<WeDoRaidsPanel> apply, String key, boolean demo, boolean bridgeDown)
+		{
+			this(name, apply, key, demo, bridgeDown, "All raids");
+		}
+
+		private State(String name, Consumer<WeDoRaidsPanel> apply, String key, boolean demo, boolean bridgeDown,
+			String raidFilter)
+		{
 			this.name = name;
 			this.apply = apply;
 			this.key = key;
+			this.demo = demo;
+			this.bridgeDown = bridgeDown;
+			this.raidFilter = raidFilter;
 		}
 	}
 }

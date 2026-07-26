@@ -28,6 +28,7 @@ import com.wedoraids.feed.RaidType;
 import com.wedoraids.ui.WdrTheme;
 import java.awt.Color;
 import java.awt.Cursor;
+import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
@@ -75,7 +76,6 @@ final class RaidTabButton extends JButton
 		this.segment = segment;
 		this.selected = selected;
 		setFont(FontManager.getRunescapeSmallFont());
-		setForeground(WdrTheme.TEXT_DIM);
 		setFocusPainted(false);
 		setContentAreaFilled(false);
 		setBorderPainted(false);
@@ -85,10 +85,34 @@ final class RaidTabButton extends JButton
 		addActionListener(e -> onSelected.run());
 	}
 
+	/** Rank has to survive being unavailable; {@link com.wedoraids.ui.WdrButton} sets the precedent. */
+	@Override
+	public void setEnabled(boolean enabled)
+	{
+		super.setEnabled(enabled);
+		setCursor(new Cursor(enabled ? Cursor.HAND_CURSOR : Cursor.DEFAULT_CURSOR));
+		repaint();
+	}
+
 	void refreshSelection()
 	{
-		setForeground(selected.getAsBoolean() ? WdrTheme.TEXT : WdrTheme.TEXT_DIM);
 		repaint();
+	}
+
+	/**
+	 * Ink per state, painted by this class so the look and feel cannot re-dim it. Left to the L&F,
+	 * a disabled selected tab rendered at (149,149,149) over the raid fill — 2.20:1, under the 4.5:1
+	 * body minimum — on exactly the control that names which raid an edit has locked. The selected
+	 * tab keeps primary ink because it states a fact; the unselected tabs drop to the muted disabled
+	 * ink the rest of the panel's controls already use, and the cursor change carries the rest.
+	 */
+	private Color inkColor(boolean isSelected)
+	{
+		if (isSelected)
+		{
+			return WdrTheme.TEXT;
+		}
+		return isEnabled() ? WdrTheme.TEXT_DIM : WdrTheme.TEXT_MUTED;
 	}
 
 	/** The selected fill: the canvas walked {@value #RAID_BLEND} of the way to this raid's hue. */
@@ -139,7 +163,7 @@ final class RaidTabButton extends JButton
 		{
 			fill = raidFill();
 		}
-		else if (getModel().isRollover())
+		else if (isEnabled() && getModel().isRollover())
 		{
 			fill = WdrTheme.HOVER;
 		}
@@ -158,7 +182,16 @@ final class RaidTabButton extends JButton
 		{
 			graphics2d.drawLine(width - 1, 0, width - 1, height - 1);
 		}
+		// The label, painted here rather than by super: the L&F substitutes its own colour for disabled
+		// text, which is what produced the 2.20:1 failure this class now guards against. Text antialiasing
+		// stays off so the pixel font renders exactly as every other label in the client.
+		graphics2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
+		graphics2d.setFont(getFont());
+		graphics2d.setColor(inkColor(isSelected));
+		final FontMetrics metrics = graphics2d.getFontMetrics();
+		final int textX = (width - metrics.stringWidth(getText())) / 2;
+		final int textY = (height - metrics.getHeight()) / 2 + metrics.getAscent();
+		graphics2d.drawString(getText(), textX, textY);
 		graphics2d.dispose();
-		super.paintComponent(graphics);
 	}
 }

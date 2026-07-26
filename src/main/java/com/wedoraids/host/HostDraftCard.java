@@ -26,25 +26,23 @@ package com.wedoraids.host;
 
 import com.wedoraids.feed.RaidType;
 import com.wedoraids.ui.HtmlEscape;
+import com.wedoraids.ui.SplitGrid;
 import com.wedoraids.ui.WdrTheme;
 import com.wedoraids.ui.WrappedText;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.GridLayout;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
-import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
-import javax.swing.border.Border;
 import net.runelite.client.ui.FontManager;
 
 /**
@@ -82,7 +80,10 @@ final class HostDraftCard extends JPanel
 		this.onChange = onChange;
 		setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 		setBackground(WdrTheme.CARD);
-		setBorder(CARD_PADDING);
+		// Outlined, not railed. In the feed a rail separates one call from its neighbours; this card has
+		// no neighbours, so a rail marked nothing while making the raid being composed look like the raids
+		// being browsed. The headline still carries the hue.
+		setBorder(WdrTheme.CARD_BORDER);
 		setAlignmentX(Component.LEFT_ALIGNMENT);
 		WdrTheme.styleField(scale);
 		buildHeadline();
@@ -193,7 +194,9 @@ final class HostDraftCard extends JPanel
 	{
 		final StringBuilder body = new StringBuilder();
 		appendRoute(body, partyHub.isEmpty() ? null : "ph: " + partyHub);
-		appendRoute(body, friendsChat.isEmpty() ? null : "fc " + friendsChat);
+		// Colon on both routes: the feed card and the live summary already taught "ph:", and two adjacent
+		// lines in one block disagreeing on punctuation reads as an oversight, not a convention.
+		appendRoute(body, friendsChat.isEmpty() ? null : "fc: " + friendsChat);
 		// A single JLabel ellipsizes, which silently drops a whole joining route (or the tail of a
 		// passphrase, and a partial passphrase is useless). Rendering as HTML at the card measure wraps
 		// instead of truncating, and each route gets its own line so a long value never pushes the next
@@ -222,7 +225,7 @@ final class HostDraftCard extends JPanel
 
 	private void buildRoleGroup()
 	{
-		final JPanel grid = new JPanel(new GridLayout(2, 2, 4, 4));
+		final JPanel grid = new JPanel(new SplitGrid(4, 4));
 		grid.setOpaque(false);
 		for (RoleChip chip : chips)
 		{
@@ -326,6 +329,13 @@ final class HostDraftCard extends JPanel
 		return scale.getText().trim();
 	}
 
+	/** Marks and focuses the scale field after its value fails validation; the mark clears on edit. */
+	void flagScaleInvalid()
+	{
+		WdrTheme.flagInvalid(scale);
+		scale.requestFocusInWindow();
+	}
+
 	void selectTier(String value)
 	{
 		tierChooser.select(value);
@@ -406,20 +416,4 @@ final class HostDraftCard extends JPanel
 		label.setForeground(WdrTheme.TEXT_MUTED);
 		label.setAlignmentX(Component.LEFT_ALIGNMENT);
 	}
-
-	/**
-	 * No raid rail here. In the feed a rail separates one call from its neighbours, which is work
-	 * worth a pixel; this card has no neighbours, so the rail marked nothing while making the raid a
-	 * host is composing look like the raids they are browsing. The headline still carries the hue.
-	 *
-	 * <p>It does still need an edge. With the rail gone the surface was the only thing defining the
-	 * card, and against the panel canvas that step measures 1.14:1 — below seeing. At the real client
-	 * size the compose controls read as loose fields on the canvas while every railed feed card below
-	 * them read as a card. A neutral outline restores the container without restoring the list
-	 * semantics: railed means "one of many", outlined means "one thing". The padding gives the pixel
-	 * back to the outline so the card's outer measure does not change.
-	 */
-	private static final Border CARD_PADDING = BorderFactory.createCompoundBorder(
-		BorderFactory.createLineBorder(WdrTheme.BORDER),
-		BorderFactory.createEmptyBorder(8, 9, 9, 9));
 }

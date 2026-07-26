@@ -141,19 +141,19 @@ final class HostInactivityGuard
 		JLabel question = new JLabel("Still hosting this raid?");
 		question.setFont(FontManager.getRunescapeSmallFont());
 		question.setForeground(WdrTheme.TEXT);
-		fullWidth(question);
+		HostFormLayout.fullWidth(question);
 		banner.add(question);
 		banner.add(Box.createVerticalStrut(2));
 
 		countdown.setFont(FontManager.getRunescapeSmallFont());
 		countdown.setForeground(WdrTheme.ERROR);
-		fullWidth(countdown);
+		HostFormLayout.fullWidth(countdown);
 		banner.add(countdown);
 		banner.add(Box.createVerticalStrut(7));
 
 		WdrButton here = new WdrButton("Keep it open", WdrButton.Variant.PRIMARY);
 		here.addActionListener(e -> reset());
-		fullWidth(here);
+		HostFormLayout.fullWidth(here);
 		banner.add(here);
 		banner.setMaximumSize(new Dimension(Integer.MAX_VALUE, banner.getPreferredSize().height));
 	}
@@ -195,11 +195,5 @@ final class HostInactivityGuard
 			return;
 		}
 		countdown.setText("Auto-closing in " + promptRemaining + "s…");
-	}
-
-	private static void fullWidth(javax.swing.JComponent component)
-	{
-		component.setAlignmentX(Component.LEFT_ALIGNMENT);
-		component.setMaximumSize(new Dimension(Integer.MAX_VALUE, component.getPreferredSize().height));
 	}
 }

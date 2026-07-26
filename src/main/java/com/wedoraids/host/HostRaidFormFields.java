@@ -127,6 +127,12 @@ final class HostRaidFormFields extends JPanel
 		refreshHeadlineAndTruth();
 	}
 
+	/** Package-private so the design gallery can render the disclosure open, as clicking its toggle does. */
+	void openMoreOptions()
+	{
+		more.openMoreOptions();
+	}
+
 	void setTierEnabled(boolean enabled)
 	{
 		card.setTierEnabled(enabled);
@@ -216,6 +222,9 @@ final class HostRaidFormFields extends JPanel
 		{
 			if (!value.matches("\\d{1,3}") || Integer.parseInt(value) > 100)
 			{
+				// Mark and focus the field, matching the world path: the message renders under the
+				// submit button, which is not where the mistake is.
+				card.flagScaleInvalid();
 				status.accept("Scale must be 0-100.", true);
 				return false;
 			}
@@ -329,6 +338,14 @@ final class HostRaidFormFields extends JPanel
 	private void refreshHeadlineAndTruth()
 	{
 		card.refreshHeadline(more.getWorld().trim());
+		// The truth line surfaces values a collapsed More is hiding. With the disclosure open, those
+		// same fields are on screen 40px below it, and rendering proved the line was restating them
+		// live, keystroke by keystroke. One fact, one place: the line stands down while the fields show.
+		if (more.isOpen())
+		{
+			card.refreshTruth("", "");
+			return;
+		}
 		final String hub = more.getPartyHub().trim();
 		final String friendsChat = selectedRaid.get() == RaidType.COX ? more.getFriendsChat().trim() : "";
 		card.refreshTruth(hub, friendsChat);
