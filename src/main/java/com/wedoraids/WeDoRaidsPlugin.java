@@ -897,7 +897,7 @@ public class WeDoRaidsPlugin extends Plugin
 			recruitmentCoordinator = new RecruitmentCoordinator(config, demoEntries, notifiedKeys,
 				activeTobHosts, activeToaHosts, () -> localBanned, () -> localVerified,
 				identityGeneration::get, this::notifyRecruit,
-				(generation, entries) -> runOnPanel(generation, p -> p.setEntries(entries)));
+				(generation, entries, hidden) -> runOnPanel(generation, p -> p.setEntries(entries, hidden)));
 		}
 		return recruitmentCoordinator;
 	}

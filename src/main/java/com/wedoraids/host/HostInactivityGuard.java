@@ -26,7 +26,6 @@ package com.wedoraids.host;
 
 import com.wedoraids.ui.WdrButton;
 import com.wedoraids.ui.WdrTheme;
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.util.function.BooleanSupplier;
@@ -51,7 +50,11 @@ final class HostInactivityGuard
 	private final Timer idleTimer;
 	private final Timer promptTimer;
 	private final JPanel banner = new JPanel();
-	private final JLabel countdown = new JLabel();
+	/**
+	 * Placeholder text is required: {@code fullWidth} caps a component's maximum height at its
+	 * preferred height, and an empty label prefers zero, which pins the countdown closed permanently.
+	 */
+	private final JLabel countdown = new JLabel(" ");
 	private int promptRemaining;
 	private boolean prompting;
 
@@ -127,32 +130,35 @@ final class HostInactivityGuard
 	private void buildBanner()
 	{
 		banner.setLayout(new BoxLayout(banner, BoxLayout.Y_AXIS));
-		banner.setBackground(new Color(46, 34, 18));
+		banner.setBackground(WdrTheme.CARD);
+		// Uses the failure colour rather than a neutral hue: the countdown ends by closing the post,
+		// so it belongs to the failure role. An amber warning would read as ToA in a raid-colour panel.
 		banner.setBorder(BorderFactory.createCompoundBorder(
-			BorderFactory.createMatteBorder(2, 0, 0, 0, new Color(214, 170, 80)),
+			BorderFactory.createMatteBorder(0, 1, 0, 0, WdrTheme.ERROR),
 			BorderFactory.createEmptyBorder(8, 10, 10, 10)));
 		banner.setAlignmentX(Component.LEFT_ALIGNMENT);
 
 		JLabel question = new JLabel("Still hosting this raid?");
 		question.setFont(FontManager.getRunescapeSmallFont());
-		question.setForeground(new Color(240, 210, 150));
-		fullWidth(question);
+		question.setForeground(WdrTheme.TEXT);
+		HostFormLayout.fullWidth(question);
 		banner.add(question);
 		banner.add(Box.createVerticalStrut(2));
 
 		countdown.setFont(FontManager.getRunescapeSmallFont());
-		countdown.setForeground(WdrTheme.TEXT_DIM);
-		fullWidth(countdown);
+		countdown.setForeground(WdrTheme.ERROR);
+		HostFormLayout.fullWidth(countdown);
 		banner.add(countdown);
 		banner.add(Box.createVerticalStrut(7));
 
-		WdrButton here = new WdrButton("I'm here, keep it open", WdrButton.Variant.PRIMARY);
+		WdrButton here = new WdrButton("Keep it open", WdrButton.Variant.PRIMARY);
 		here.addActionListener(e -> reset());
-		fullWidth(here);
+		HostFormLayout.fullWidth(here);
 		banner.add(here);
 		banner.setMaximumSize(new Dimension(Integer.MAX_VALUE, banner.getPreferredSize().height));
 	}
 
+	/** Fires when the idle timer runs out, and the host still has a live post to lose. */
 	private void showPrompt()
 	{
 		if (liveState.isStopped() || !hasLivePost.getAsBoolean())
@@ -189,11 +195,5 @@ final class HostInactivityGuard
 			return;
 		}
 		countdown.setText("Auto-closing in " + promptRemaining + "s…");
-	}
-
-	private static void fullWidth(javax.swing.JComponent component)
-	{
-		component.setAlignmentX(Component.LEFT_ALIGNMENT);
-		component.setMaximumSize(new Dimension(Integer.MAX_VALUE, component.getPreferredSize().height));
 	}
 }

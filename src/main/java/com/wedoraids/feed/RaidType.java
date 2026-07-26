@@ -28,20 +28,29 @@ import java.awt.Color;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * The three WDR raids and their tier ladders.
+ *
+ * <p>Each raid's colour is the panel's one data dimension. Hues follow the raids (Verzik purple,
+ * Xeric green, Amascut gold) and are equalised at OKLCH lightness 0.76 with matched chroma so no
+ * raid outranks another by colour weight. All three clear WCAG AA on both the card and the canvas.
+ *
+ * <p>Colour is never the only signal: every raid is also labelled in text.
+ */
 @Getter
 @RequiredArgsConstructor
 public enum RaidType
 {
-	TOB("ToB", new Color(183, 105, 240),
+	TOB("ToB", new Color(201, 154, 240),
 		new String[]{"Learner", "Standard", "Advanced", "Efficient", "HM", "HM Exp"},
 		new int[]{0, 10, 100, 100, 100, 100}),
-	COX("CoX", new Color(102, 187, 106),
+	COX("CoX", new Color(122, 199, 124),
 		new String[]{"Learner", "Unscaled", "Scaled", "Experienced", "CM", "FFA", "FFA CM", "CM Efficiency"},
 		new int[]{0, 5, 25, 75, 75, 25, 75, 500}),
-	TOA("ToA", new Color(255, 183, 77),
+	TOA("ToA", new Color(226, 163, 72),
 		new String[]{"0-295", "300-445", "450+", "FFA"},
 		new int[]{0, 5, 5, 5}),
-	OTHER("Raid", Color.LIGHT_GRAY, new String[]{}, new int[]{});
+	OTHER("Raid", new Color(158, 158, 158), new String[]{}, new int[]{});
 
 	private final String displayName;
 	private final Color color;

@@ -33,11 +33,15 @@ import com.wedoraids.ui.WdrTheme;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Rectangle;
 import java.util.List;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.Scrollable;
+import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.PluginPanel;
 
 public class WeDoRaidsPanel extends PluginPanel
@@ -54,46 +58,125 @@ public class WeDoRaidsPanel extends PluginPanel
 		super(false);
 		header = new RecruitPanelHeader(config, panelDependencies.onRefresh());
 		filterBar = new RecruitFilterBar(config, panelDependencies.saveFilter(), this::rebuildRecruitList);
-		recruitList = new RecruitListPanel(filterBar, panelDependencies.onHopWorld(),
-			panelDependencies.onJoinHub(), header::setEntryCount, header.logo());
+		recruitList = new RecruitListPanel(config, filterBar, panelDependencies.saveFilter(),
+			panelDependencies.onHopWorld(), panelDependencies.onJoinHub(), header::setEntryCount);
 
 		setLayout(new BorderLayout(0, 8));
 		setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 		setBackground(WdrTheme.BACKGROUND);
 
-		JPanel top = new JPanel();
-		top.setLayout(new BoxLayout(top, BoxLayout.Y_AXIS));
-		top.setOpaque(false);
-		top.add(header);
-		top.add(Box.createVerticalStrut(6));
+		// The host form can be taller than the fixed-mode sidebar (~500px), so it must scroll with the feed.
+		hostForm = new HostFormPanel(hostDependencies);
+		hostForm.setAlignmentX(Component.LEFT_ALIGNMENT);
 
 		JPanel demoBanner = header.demoBanner();
 		demoBanner.setAlignmentX(Component.LEFT_ALIGNMENT);
-		top.add(demoBanner);
 		header.refreshDemoBanner();
 
-		hostForm = new HostFormPanel(hostDependencies);
-		hostForm.setAlignmentX(Component.LEFT_ALIGNMENT);
-		top.add(hostForm);
-		top.add(Box.createVerticalStrut(6));
-
-		top.add(divider());
-		top.add(Box.createVerticalStrut(6));
-		top.add(filterBar);
+		JPanel content = new ScrollingContent();
+		content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
+		content.setOpaque(false);
+		// Filters, the raid counts and the rule between them only mean anything when there is a feed to
+		// sort, so they travel together and disappear together.
+		JPanel feedChrome = new JPanel()
+		{
+			@Override
+			public Dimension getMaximumSize()
+			{
+				return new Dimension(Integer.MAX_VALUE, getPreferredSize().height);
+			}
+		};
+		feedChrome.setLayout(new BoxLayout(feedChrome, BoxLayout.Y_AXIS));
+		feedChrome.setOpaque(false);
+		feedChrome.setAlignmentX(Component.LEFT_ALIGNMENT);
+		// A named heading separates the feed region. A gap alone doesn't work: both sides are full-width
+		// bordered rows on the same surface, so space reads as spacing, not as a section boundary.
+		feedChrome.add(Box.createVerticalStrut(13));
+		feedChrome.add(feedHeading());
+		feedChrome.add(Box.createVerticalStrut(3));
+		feedChrome.add(filterBar);
 		filterBar.restoreSelection();
-		top.add(Box.createVerticalStrut(4));
-		top.add(recruitList.countLabel());
-		top.add(Box.createVerticalStrut(6));
+		feedChrome.add(Box.createVerticalStrut(3));
+		feedChrome.add(recruitList.countLabel());
+		feedChrome.add(Box.createVerticalStrut(1));
 
-		add(top, BorderLayout.NORTH);
-		add(recruitList.scrollPane(), BorderLayout.CENTER);
+		content.add(demoBanner);
+		content.add(hostForm);
+		content.add(feedChrome);
+		content.add(recruitList);
+
+		// Hosting cannot succeed while logged out, banned or unverified, and the notice already states
+		// the one thing to do next, so offering a form that only fails at the bridge is noise.
+		recruitList.onFeedAccessibleChanged(accessible ->
+		{
+			hostForm.setVisible(accessible);
+			hostForm.toggleButton().setVisible(accessible);
+			feedChrome.setVisible(accessible);
+		});
+
+		// The toggle is pinned above the scroll so a long feed can't push it out of sight.
+		JPanel topChrome = new JPanel(new BorderLayout(0, 8));
+		topChrome.setOpaque(false);
+		topChrome.add(header, BorderLayout.NORTH);
+		topChrome.add(hostForm.toggleButton(), BorderLayout.CENTER);
+
+		add(topChrome, BorderLayout.NORTH);
+		add(recruitList.scrollPane(content), BorderLayout.CENTER);
 		add(header.statusBar(), BorderLayout.SOUTH);
 		recruitList.rebuild();
+	}
+
+	/**
+	 * Feed region heading. Bold {@link WdrTheme#TEXT_DIM}: heavier than a field label, quieter than
+	 * a raid title. "Calls" is the product word for a recruitment post.
+	 */
+	private static JLabel feedHeading()
+	{
+		JLabel heading = new JLabel("Open calls");
+		heading.setFont(FontManager.getRunescapeBoldFont());
+		heading.setForeground(WdrTheme.TEXT_DIM);
+		heading.setAlignmentX(Component.LEFT_ALIGNMENT);
+		return heading;
+	}
+
+	/** Fills the viewport's width so card width never depends on card content. */
+	private static final class ScrollingContent extends JPanel implements Scrollable
+	{
+		@Override
+		public Dimension getPreferredScrollableViewportSize()
+		{
+			return getPreferredSize();
+		}
+
+		@Override
+		public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction)
+		{
+			return 16;
+		}
+
+		@Override
+		public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction)
+		{
+			return visibleRect.height;
+		}
+
+		@Override
+		public boolean getScrollableTracksViewportWidth()
+		{
+			return true;
+		}
+
+		@Override
+		public boolean getScrollableTracksViewportHeight()
+		{
+			return false;
+		}
 	}
 
 	public void setBridgeStatus(BridgeStatus status)
 	{
 		header.setBridgeStatus(status);
+		recruitList.setBridgeStatus(status);
 	}
 
 	public void setBanned(boolean banned)
@@ -144,8 +227,13 @@ public class WeDoRaidsPanel extends PluginPanel
 
 	public void setEntries(List<RecruitEntry> newEntries)
 	{
+		setEntries(newEntries, 0);
+	}
+
+	public void setEntries(List<RecruitEntry> newEntries, int hiddenByFilters)
+	{
 		header.refreshDemoBanner();
-		recruitList.setEntries(newEntries);
+		recruitList.setEntries(newEntries, hiddenByFilters);
 	}
 
 	public void clear()
@@ -156,14 +244,5 @@ public class WeDoRaidsPanel extends PluginPanel
 	private void rebuildRecruitList()
 	{
 		recruitList.rebuild();
-	}
-
-	private static JPanel divider()
-	{
-		JPanel line = new JPanel();
-		line.setBackground(WdrTheme.BORDER);
-		line.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
-		line.setAlignmentX(Component.LEFT_ALIGNMENT);
-		return line;
 	}
 }

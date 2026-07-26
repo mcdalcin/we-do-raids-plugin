@@ -22,26 +22,46 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.wedoraids.bridge;
+package com.wedoraids.ui;
 
-import com.wedoraids.ui.WdrTheme;
-import java.awt.Color;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 
 /**
- * Feed connection state. Only failure carries colour: a healthy feed is the expected case and
- * says so in words, so the panel never spends attention on "everything is fine".
+ * HTML line-wrap widths for the panel's text, in one place.
+ *
+ * <p>Swing has no wrapping label, so wrapped copy is rendered as HTML with an explicit pixel
+ * width. Declaring a body width alone is not enough: the HTML renderer ignores it unless the
+ * label's own maximum width is also capped. Both must be set together by the consumer.
+ *
+ * <p>{@link #PANEL} of 150 was measured against a worst-case status string in the design
+ * gallery. Re-check with a render if the panel's padding changes.
  */
-@Getter
-@RequiredArgsConstructor
-public enum BridgeStatus
+public final class WrappedText
 {
-	OFF("Feed off", WdrTheme.TEXT_MUTED),
-	CONNECTING("Connecting…", WdrTheme.TEXT_MUTED),
-	ONLINE("Live", WdrTheme.TEXT_DIM),
-	OFFLINE("Offline", WdrTheme.ERROR);
+	/** Line length for copy inside a card. */
+	public static final int CARD = 150;
+	/** Line length for copy sitting directly on the panel, such as form status lines. */
+	public static final int PANEL = 150;
 
-	private final String label;
-	private final Color color;
+	private WrappedText()
+	{
+	}
+
+	/** Escaped, wrapped at the card measure. */
+	public static String html(String text)
+	{
+		return html(text, CARD);
+	}
+
+	/** Escaped, wrapped at an explicit measure. */
+	public static String html(String text, int width)
+	{
+		return "<html><body style='width:" + width + "px'>" + HtmlEscape.escape(text) + "</body></html>";
+	}
+
+	/** Escaped, wrapped and centred, for empty-state and notice copy. */
+	public static String centered(String text, int width)
+	{
+		return "<html><div style='text-align:center;width:" + width + "px'>"
+			+ HtmlEscape.escape(text) + "</div></html>";
+	}
 }

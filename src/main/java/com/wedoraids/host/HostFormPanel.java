@@ -24,15 +24,16 @@
  */
 package com.wedoraids.host;
 
-import com.wedoraids.ui.WdrTheme;
+import com.wedoraids.ui.WdrButton;
 import java.awt.BorderLayout;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Consumer;
+import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
-import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import net.runelite.client.ui.FontManager;
 
 public class HostFormPanel extends JPanel
 {
@@ -46,7 +47,7 @@ public class HostFormPanel extends JPanel
 	}
 
 	private final HostActions actions;
-	private final JButton toggle = new JButton("＋ Host a raid");
+	private final WdrButton toggle = new WdrButton("Host raid", WdrButton.Variant.ENTRY);
 	private final HostRaidForm raidForm;
 	private final HostLivePostPanel livePostPanel;
 	private final HostInactivityGuard inactivityGuard;
@@ -64,9 +65,10 @@ public class HostFormPanel extends JPanel
 		setLayout(new BorderLayout(0, 4));
 		setOpaque(false);
 
-		WdrTheme.styleButton(toggle);
+		// The toggle is not added to this panel. It is pinned as fixed chrome by the owning panel
+		// so a long feed cannot scroll hosting out of reach; only the form below it scrolls.
 		toggle.addActionListener(e -> setExpanded(!expanded));
-		add(toggle, BorderLayout.NORTH);
+		applyToggleWeight();
 
 		raidForm = new HostRaidForm(dependencies, this::doSubmit, this::cancelEdit);
 		inactivityGuard = new HostInactivityGuard(liveState,
@@ -127,10 +129,39 @@ public class HostFormPanel extends JPanel
 		return HostRaidForm.generatePartyHub();
 	}
 
+	/**
+	 * The disclosure control, handed to the owning panel so it can be pinned outside the scroll area.
+	 */
+	public WdrButton toggleButton()
+	{
+		return toggle;
+	}
+
+	/**
+	 * Font and padding follow the expanded state.
+	 *
+	 * <p>Collapsed, the toggle is bold at 30px so it reads as an entry point rather than an input.
+	 * Expanded, it returns to the ordinary control size so it doesn't outrank the submit button below it.
+	 */
+	private void applyToggleWeight()
+	{
+		toggle.setFont(expanded
+			? FontManager.getRunescapeSmallFont()
+			: FontManager.getRunescapeBoldFont());
+		toggle.setBorder(expanded
+			? BorderFactory.createEmptyBorder(4, 10, 4, 10)
+			: BorderFactory.createEmptyBorder(7, 10, 7, 10));
+	}
+
 	private void setExpanded(boolean expanded)
 	{
 		this.expanded = expanded;
-		toggle.setText((expanded ? "－" : "＋") + " Host a raid");
+		toggle.setText(expanded ? "Hide host form" : "Host raid");
+		// Collapsed: ENTRY (accent-edged, unfilled) so it reads as the way into hosting without
+		// claiming the rank of the form's submit. Expanded: QUIET so the control for dismissing
+		// the form doesn't outrank the fields inside it.
+		toggle.setVariant(expanded ? WdrButton.Variant.QUIET : WdrButton.Variant.ENTRY);
+		applyToggleWeight();
 		raidForm.setVisible(expanded && (displayedLiveFields == null || editingLive));
 		livePostPanel.setVisible(expanded && displayedLiveFields != null && !editingLive);
 		if (expanded)
@@ -206,7 +237,7 @@ public class HostFormPanel extends JPanel
 		raidForm.beginEdit();
 		livePostPanel.setVisible(false);
 		raidForm.setVisible(true);
-		raidForm.setStatus("Editing your live raid. Change anything, then Save changes.", false);
+		raidForm.setStatus("Editing your live raid.", false);
 		revalidate();
 		repaint();
 	}
@@ -249,11 +280,6 @@ public class HostFormPanel extends JPanel
 	private void decrementSpot()
 	{
 		livePostPanel.decrementSpot();
-	}
-
-	private void doClose()
-	{
-		livePostPanel.close();
 	}
 
 	private void closeForInactivity()

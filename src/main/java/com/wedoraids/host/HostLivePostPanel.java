@@ -41,6 +41,8 @@ final class HostLivePostPanel extends JPanel
 	private final Consumer<Map<String, String>> displayedFieldsChanged;
 	private final HostLivePostView view;
 	private Map<String, String> displayedFields;
+	/** Confirmed fields as they were before the last successful update; target of "Undo last change". */
+	private Map<String, String> undoSnapshot;
 
 	HostLivePostPanel(HostFormPanel.HostActions actions, HostLiveState liveState,
 		HostInactivityGuard inactivityGuard, Runnable beginEdit,
@@ -51,7 +53,7 @@ final class HostLivePostPanel extends JPanel
 		this.inactivityGuard = inactivityGuard;
 		this.displayedFieldsChanged = displayedFieldsChanged;
 		this.view = new HostLivePostView(inactivityGuard, this::fillRole, this::decrementSpot,
-			beginEdit, this::close);
+			beginEdit, this::close, this::undo);
 		setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 		setOpaque(false);
 		setVisible(false);
@@ -70,6 +72,7 @@ final class HostLivePostPanel extends JPanel
 		{
 			displayedFields.put("messageId", messageId);
 		}
+		undoSnapshot = null;
 		displayedFieldsChanged.accept(displayedFields);
 		liveState.enterLivePost(displayedFields);
 		view.setStatus(" ", false);
@@ -80,6 +83,7 @@ final class HostLivePostPanel extends JPanel
 	void exitLivePost()
 	{
 		displayedFields = null;
+		undoSnapshot = null;
 		displayedFieldsChanged.accept(null);
 		liveState.exitLivePost();
 		inactivityGuard.exitLivePost();
@@ -136,7 +140,23 @@ final class HostLivePostPanel extends JPanel
 
 	void rebuildControls()
 	{
-		view.rebuild(displayedFields);
+		view.rebuild(displayedFields, undoSnapshot != null);
+	}
+
+	/** Reverts the last successful update via the normal update endpoint. */
+	void undo()
+	{
+		if (!canMutate() || undoSnapshot == null)
+		{
+			return;
+		}
+		final Map<String, String> previous = liveState.confirmedFieldsSnapshot();
+		final Map<String, String> candidate = new LinkedHashMap<>(undoSnapshot);
+		displayedFields = new LinkedHashMap<>(candidate);
+		displayedFieldsChanged.accept(displayedFields);
+		inactivityGuard.reset();
+		pushUpdate(previous, candidate);
+		rebuildControls();
 	}
 
 	private List<String> currentRoles()
@@ -159,13 +179,9 @@ final class HostLivePostPanel extends JPanel
 
 	private void afterSpotChange(Map<String, String> previous)
 	{
+		// Reaching +0 no longer auto-closes: the view shows "Party full" and the host confirms
+		// with Close raid (or Undo); the inactivity guard still closes abandoned posts.
 		final Map<String, String> candidate = new LinkedHashMap<>(displayedFields);
-		if ("+0".equals(displayedFields.get("spots")))
-		{
-			view.setStatus("Party full, closing raid…", false);
-			close(previous, candidate);
-			return;
-		}
 		inactivityGuard.reset();
 		pushUpdate(previous, candidate);
 		rebuildControls();
@@ -206,6 +222,8 @@ final class HostLivePostPanel extends JPanel
 			if (success)
 			{
 				liveState.confirmLiveFields(candidate);
+				undoSnapshot = previous == null ? null : new LinkedHashMap<>(previous);
+				rebuildControls();
 			}
 			else
 			{

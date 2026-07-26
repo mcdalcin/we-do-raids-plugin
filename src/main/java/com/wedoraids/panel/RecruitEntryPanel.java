@@ -28,7 +28,9 @@ import com.wedoraids.feed.RecruitDisplay;
 import com.wedoraids.feed.RecruitEntry;
 import com.wedoraids.ui.HtmlEscape;
 import com.wedoraids.ui.WdrTheme;
+import com.wedoraids.ui.WrappedText;
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Dimension;
@@ -38,6 +40,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
+import java.util.function.Predicate;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JLabel;
@@ -46,15 +49,15 @@ import net.runelite.client.ui.FontManager;
 
 final class RecruitEntryPanel extends JPanel
 {
-	RecruitEntryPanel(RecruitEntry entry, IntConsumer onHopWorld, Consumer<String> onJoinHub)
+	RecruitEntryPanel(RecruitEntry entry, IntConsumer onHopWorld, Consumer<String> onJoinHub,
+		Predicate<String> joinedHub)
 	{
 		super(new BorderLayout(0, 4));
 		setBackground(WdrTheme.CARD);
+		// 1px left rail only. A full perimeter border multiplies the hue's area and turns the list into a stack of boxes.
 		setBorder(BorderFactory.createCompoundBorder(
-			BorderFactory.createLineBorder(WdrTheme.BORDER),
-			BorderFactory.createCompoundBorder(
-				BorderFactory.createMatteBorder(0, 3, 0, 0, entry.getRaidType().getColor()),
-				BorderFactory.createEmptyBorder(6, 8, 6, 8))));
+			BorderFactory.createMatteBorder(0, 1, 0, 0, entry.getRaidType().getColor()),
+			BorderFactory.createEmptyBorder(6, 8, 6, 8)));
 		setAlignmentX(Component.LEFT_ALIGNMENT);
 		setToolTipText(buildToolTip(entry));
 
@@ -75,14 +78,10 @@ final class RecruitEntryPanel extends JPanel
 		topRow.add(worldLabel, BorderLayout.EAST);
 
 		StringBuilder detail = buildDetail(entry);
-		JLabel messageLabel = new JLabel("<html><body style='width:150px'>"
-			+ HtmlEscape.escape(entry.getMessage()) + "</body></html>");
-		messageLabel.setForeground(WdrTheme.TEXT_DIM);
-		messageLabel.setFont(FontManager.getRunescapeSmallFont());
 
 		JLabel senderLabel = buildSenderLabel(entry);
 		JLabel timeLabel = new JLabel(timeAgo(entry.getTimestamp()));
-		timeLabel.setForeground(WdrTheme.TEXT_DIM);
+		timeLabel.setForeground(WdrTheme.TEXT_MUTED);
 		timeLabel.setFont(FontManager.getRunescapeSmallFont());
 
 		JPanel bottomRow = new JPanel(new BorderLayout());
@@ -93,17 +92,25 @@ final class RecruitEntryPanel extends JPanel
 		JPanel body = new JPanel();
 		body.setLayout(new BoxLayout(body, BoxLayout.Y_AXIS));
 		body.setOpaque(false);
+		// Fill and roles are the joining decision, so they carry primary ink. The raid hue stays
+		// on the raid name and the card edge, where it means "which raid" and nothing else.
 		if (detail.length() > 0)
 		{
 			JLabel detailLabel = new JLabel(detail.toString());
-			detailLabel.setForeground(entry.getRaidType().getColor());
+			detailLabel.setForeground(WdrTheme.TEXT);
 			detailLabel.setFont(FontManager.getRunescapeSmallFont());
 			detailLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 			body.add(detailLabel);
 		}
-		messageLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-		body.add(messageLabel);
-		addHubLabel(body, entry, onJoinHub);
+		if (!RecruitDisplay.messageIsRedundant(entry))
+		{
+			JLabel messageLabel = new JLabel(WrappedText.html(entry.getMessage()));
+			messageLabel.setForeground(WdrTheme.TEXT_DIM);
+			messageLabel.setFont(FontManager.getRunescapeSmallFont());
+			messageLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+			body.add(messageLabel);
+		}
+		addHubLabel(body, entry, onJoinHub, joinedHub);
 
 		add(topRow, BorderLayout.NORTH);
 		add(body, BorderLayout.CENTER);
@@ -124,7 +131,7 @@ final class RecruitEntryPanel extends JPanel
 
 	private static JLabel buildWorldLabel(RecruitEntry entry, IntConsumer onHopWorld)
 	{
-		JLabel worldLabel = new JLabel(entry.getWorld() != 0 ? "W" + entry.getWorld() : "");
+		JLabel worldLabel = new JLabel(entry.getWorld() != 0 ? "<html><u>W" + entry.getWorld() + "</u></html>" : "");
 		worldLabel.setForeground(WdrTheme.TEXT);
 		worldLabel.setFont(FontManager.getRunescapeSmallFont());
 		if (entry.getWorld() != 0)
@@ -142,7 +149,7 @@ final class RecruitEntryPanel extends JPanel
 				@Override
 				public void mouseEntered(MouseEvent event)
 				{
-					worldLabel.setForeground(java.awt.Color.WHITE);
+					worldLabel.setForeground(Color.WHITE);
 				}
 
 				@Override
@@ -180,9 +187,10 @@ final class RecruitEntryPanel extends JPanel
 
 	private static JLabel buildSenderLabel(RecruitEntry entry)
 	{
-		JLabel senderLabel = new JLabel("<html>" + HtmlEscape.escape(entry.getSender() + " · " + entry.getSource())
-			+ "</html>");
-		senderLabel.setForeground(WdrTheme.TEXT);
+		// Source is omitted: the raid is already named, coloured and bordered on this card, and the
+		// channel is still in the card and sender tooltips for anyone who needs to know where it came from.
+		JLabel senderLabel = new JLabel("<html>" + HtmlEscape.escape(entry.getSender()) + "</html>");
+		senderLabel.setForeground(WdrTheme.TEXT_DIM);
 		senderLabel.setFont(FontManager.getRunescapeSmallFont());
 		StringBuilder who = new StringBuilder("<html><b>" + HtmlEscape.escape(entry.getSender()) + "</b>");
 		who.append("<br>").append(HtmlEscape.escape(entry.getRaidType().getDisplayName())).append(" KC: ")
@@ -197,17 +205,30 @@ final class RecruitEntryPanel extends JPanel
 		return senderLabel;
 	}
 
-	private static void addHubLabel(JPanel body, RecruitEntry entry, Consumer<String> onJoinHub)
+	/**
+	 * Party hub, using the same affordance as the world link: an underline marks the target and
+	 * the label states what it is, not what to do with it. Once joined it drops to metadata.
+	 */
+	private static void addHubLabel(JPanel body, RecruitEntry entry, Consumer<String> onJoinHub,
+		Predicate<String> joinedHub)
 	{
 		if (entry.getHost() == null || entry.getHost().trim().isEmpty())
 		{
 			return;
 		}
 		final String hub = entry.getHost().trim();
-		final JLabel hubLabel = new JLabel("ph: " + hub + " - click to join");
-		hubLabel.setForeground(WdrTheme.GREEN);
+		final JLabel hubLabel = new JLabel();
 		hubLabel.setFont(FontManager.getRunescapeSmallFont());
 		hubLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+		if (joinedHub.test(hub))
+		{
+			hubLabel.setText("ph: " + hub + " · joined");
+			hubLabel.setForeground(WdrTheme.TEXT_MUTED);
+			body.add(hubLabel);
+			return;
+		}
+		hubLabel.setText("<html>ph: <u>" + HtmlEscape.escape(hub) + "</u></html>");
+		hubLabel.setForeground(WdrTheme.TEXT);
 		hubLabel.setToolTipText("Join party \"" + HtmlEscape.escape(hub) + "\" in the RuneLite Party plugin");
 		hubLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		hubLabel.addMouseListener(new MouseAdapter()
@@ -216,19 +237,21 @@ final class RecruitEntryPanel extends JPanel
 			public void mousePressed(MouseEvent event)
 			{
 				onJoinHub.accept(hub);
-				hubLabel.setText("ph: " + hub + " - joined");
+				hubLabel.setText("ph: " + hub + " · joined");
+				hubLabel.setForeground(WdrTheme.TEXT_MUTED);
+				hubLabel.setCursor(Cursor.getDefaultCursor());
 			}
 
 			@Override
 			public void mouseEntered(MouseEvent event)
 			{
-				hubLabel.setForeground(WdrTheme.GREEN_BRIGHT);
+				hubLabel.setForeground(Color.WHITE);
 			}
 
 			@Override
 			public void mouseExited(MouseEvent event)
 			{
-				hubLabel.setForeground(WdrTheme.GREEN);
+				hubLabel.setForeground(WdrTheme.TEXT);
 			}
 		});
 		body.add(hubLabel);

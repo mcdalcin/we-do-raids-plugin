@@ -88,7 +88,7 @@ public interface WeDoRaidsConfig extends Config
 	@ConfigItem(
 		keyName = "showCox",
 		name = "Chambers of Xeric",
-		description = "Show CoX recruiting messages",
+		description = "Show CoX recruiting calls",
 		section = filtersSection,
 		position = 1
 	)

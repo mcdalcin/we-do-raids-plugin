@@ -25,15 +25,15 @@
 package com.wedoraids.host;
 
 import com.wedoraids.feed.RaidType;
-import com.wedoraids.ui.HtmlEscape;
+import com.wedoraids.ui.WdrButton;
 import com.wedoraids.ui.WdrTheme;
+import com.wedoraids.ui.WrappedText;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.util.Map;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
-import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -41,15 +41,25 @@ import net.runelite.client.ui.FontManager;
 
 final class HostRaidForm extends JPanel
 {
+	/**
+	 * Max width for the status label.
+	 *
+	 * <p>Left uncapped, Swing grants the label the full panel width and HTML fills it to the edge.
+	 * At 190px the 150px body ({@link WrappedText#PANEL}) wraps cleanly with a clear right margin.
+	 */
+	private static final int STATUS_MAX_WIDTH = 190;
+
 	private final HostDependencies dependencies;
 	private final JComboBox<String> raidCombo = new JComboBox<>(new String[]{"ToB", "CoX", "ToA"});
 	private final RaidTabButton[] raidTabs = new RaidTabButton[3];
 	private final HostRaidFormFields fields;
 	private final JPanel details = new JPanel();
-	private final JButton postButton = new JButton("Post to Discord");
-	private final JButton cancelEditButton = new JButton("Cancel edit");
+	private final WdrButton postButton = new WdrButton("Post to Discord", WdrButton.Variant.PRIMARY);
+	private final WdrButton cancelEditButton = new WdrButton("Cancel edit", WdrButton.Variant.GHOST);
 	private final JLabel status = new JLabel(" ");
 	private boolean raidChosen;
+	private boolean editing;
+	private boolean promptShown;
 
 	HostRaidForm(HostDependencies dependencies, Runnable submit, Runnable cancelEdit)
 	{
@@ -64,17 +74,23 @@ final class HostRaidForm extends JPanel
 		details.setOpaque(false);
 		details.setVisible(false);
 		details.setAlignmentX(Component.LEFT_ALIGNMENT);
-		fields = new HostRaidFormFields(dependencies, this::selectedRaid, this::setStatus);
+		fields = new HostRaidFormFields(dependencies, this::selectedRaid, this::setStatus,
+			this::refreshSubmitState);
 		details.add(fields);
 		details.add(Box.createVerticalStrut(2));
 		buildActions(submit, cancelEdit);
 		add(details);
 		raidCombo.addActionListener(e -> fields.refreshForRaid());
+		refreshSubmitState();
 	}
 
 	void prepareExpanded()
 	{
-		fields.prepareExpanded();
+		// New-draft world capture only; an in-progress edit must keep the values it was populated with.
+		if (!editing)
+		{
+			fields.prepareExpanded();
+		}
 	}
 
 	void refreshTiers()
@@ -116,6 +132,7 @@ final class HostRaidForm extends JPanel
 
 	void beginEdit()
 	{
+		editing = true;
 		postButton.setText("Save changes");
 		cancelEditButton.setVisible(true);
 		raidCombo.setEnabled(false);
@@ -125,16 +142,41 @@ final class HostRaidForm extends JPanel
 
 	void resetEdit()
 	{
+		editing = false;
 		postButton.setText("Post to Discord");
 		cancelEditButton.setVisible(false);
 		raidCombo.setEnabled(true);
 		fields.setTierEnabled(true);
 		setRaidTabsEnabled(true);
+		// Collapse More and clear the draft so nothing leaks into the next session.
+		fields.resetPresentation();
+		refreshSubmitState();
+	}
+
+	/** Post stays disabled until the host has chosen both a tier and open spots. */
+	private void refreshSubmitState()
+	{
+		final boolean ready = fields.isSubmittable();
+		postButton.setEnabled(ready);
+		if (editing)
+		{
+			return;
+		}
+		if (!ready)
+		{
+			setStatus("Pick a tier and open spots.", false);
+			promptShown = true;
+		}
+		else if (promptShown)
+		{
+			setStatus(" ", false);
+			promptShown = false;
+		}
 	}
 
 	void setStatus(String message, boolean error)
 	{
-		status.setText("<html><body style='width:180px'>" + HtmlEscape.escape(message) + "</body></html>");
+		status.setText(WrappedText.html(message, WrappedText.PANEL));
 		status.setForeground(error ? WdrTheme.ERROR : WdrTheme.TEXT_DIM);
 	}
 
@@ -145,13 +187,16 @@ final class HostRaidForm extends JPanel
 
 	private JPanel buildRaidTabs()
 	{
-		JPanel row = new JPanel(new GridLayout(1, 3, 4, 0));
+		// No gutters: the segments share edges so the three read as one control that takes one answer.
+		JPanel row = new JPanel(new GridLayout(1, 3, 0, 0));
 		row.setOpaque(false);
 		for (int index = 0; index < raidTabs.length; index++)
 		{
 			final int tabIndex = index;
 			final RaidType raid = index == 0 ? RaidType.TOB : index == 1 ? RaidType.COX : RaidType.TOA;
-			raidTabs[index] = new RaidTabButton(raid,
+			final RaidTabButton.Segment segment = index == 0 ? RaidTabButton.Segment.FIRST
+				: index == 1 ? RaidTabButton.Segment.MIDDLE : RaidTabButton.Segment.LAST;
+			raidTabs[index] = new RaidTabButton(raid, segment,
 				() -> raidChosen && raidCombo.getSelectedIndex() == tabIndex,
 				() -> selectRaidTab(tabIndex));
 			row.add(raidTabs[index]);
@@ -163,18 +208,19 @@ final class HostRaidForm extends JPanel
 
 	private void buildActions(Runnable submit, Runnable cancelEdit)
 	{
-		WdrTheme.styleButton(postButton);
 		postButton.addActionListener(e -> submit.run());
-		postButton.setAlignmentX(Component.LEFT_ALIGNMENT);
+		HostFormLayout.fullWidth(postButton);
 		details.add(postButton);
-		WdrTheme.styleButton(cancelEditButton);
 		cancelEditButton.addActionListener(e -> cancelEdit.run());
-		cancelEditButton.setAlignmentX(Component.LEFT_ALIGNMENT);
+		HostFormLayout.fullWidth(cancelEditButton);
 		cancelEditButton.setVisible(false);
+		details.add(Box.createVerticalStrut(4));
 		details.add(cancelEditButton);
 		status.setFont(FontManager.getRunescapeSmallFont());
 		status.setForeground(WdrTheme.TEXT_DIM);
 		status.setAlignmentX(Component.LEFT_ALIGNMENT);
+		// Cap width so Swing's HTML wraps at the body measure rather than stretching to the panel edge.
+		status.setMaximumSize(new Dimension(STATUS_MAX_WIDTH, Integer.MAX_VALUE));
 		details.add(status);
 	}
 
@@ -199,8 +245,9 @@ final class HostRaidForm extends JPanel
 		refreshRaidTabs();
 		if (dependencies.autoHub().getAsBoolean() && fields.isPartyHubEmpty())
 		{
-			fields.setPartyHub(generatePartyHub());
+			fields.setGeneratedPartyHub(generatePartyHub());
 		}
+		fields.captureFriendsChat();
 		revalidate();
 		repaint();
 	}

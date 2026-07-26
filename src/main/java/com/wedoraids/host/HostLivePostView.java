@@ -24,21 +24,19 @@
  */
 package com.wedoraids.host;
 
-import com.wedoraids.ui.HtmlEscape;
+import com.wedoraids.ui.SplitGrid;
 import com.wedoraids.ui.WdrButton;
 import com.wedoraids.ui.WdrTheme;
+import com.wedoraids.ui.WrappedText;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.GridLayout;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
-import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
-import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import net.runelite.client.ui.FontManager;
@@ -50,16 +48,18 @@ final class HostLivePostView extends JPanel
 	private final Runnable decrementSpot;
 	private final Runnable beginEdit;
 	private final Runnable close;
+	private final Runnable undo;
 	private final JLabel status = new JLabel(" ");
 
 	HostLivePostView(HostInactivityGuard inactivityGuard, Consumer<String> fillRole,
-		Runnable decrementSpot, Runnable beginEdit, Runnable close)
+		Runnable decrementSpot, Runnable beginEdit, Runnable close, Runnable undo)
 	{
 		this.inactivityGuard = inactivityGuard;
 		this.fillRole = fillRole;
 		this.decrementSpot = decrementSpot;
 		this.beginEdit = beginEdit;
 		this.close = close;
+		this.undo = undo;
 		setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 		setOpaque(false);
 		status.setFont(FontManager.getRunescapeSmallFont());
@@ -72,7 +72,7 @@ final class HostLivePostView extends JPanel
 		return status;
 	}
 
-	void rebuild(Map<String, String> fields)
+	void rebuild(Map<String, String> fields, boolean canUndo)
 	{
 		removeAll();
 		if (inactivityGuard.isPrompting())
@@ -85,20 +85,39 @@ final class HostLivePostView extends JPanel
 		JLabel title = new JLabel("Your " + raidLabel(fields.get("raid")) + " raid is live");
 		title.setFont(FontManager.getRunescapeSmallFont());
 		title.setForeground(WdrTheme.TEXT);
-		fullWidth(title);
+		HostFormLayout.fullWidth(title);
 		card.add(title);
+		final String summary = summary(fields);
+		if (!summary.isEmpty())
+		{
+			card.add(Box.createVerticalStrut(2));
+			card.add(hint(summary));
+		}
 		card.add(Box.createVerticalStrut(4));
 		card.add(row(spotsChip(spots)));
-		card.add(Box.createVerticalStrut(9));
 
+		// When the party is full the chip already says so; the only remaining actions are close and edit.
 		final List<String> roles = roles(fields);
-		if (roles.isEmpty())
+		if (!"+0".equals(spots))
 		{
-			addSpotControl(card);
+			card.add(Box.createVerticalStrut(9));
+			if (roles.isEmpty())
+			{
+				addSpotControl(card);
+			}
+			else
+			{
+				addRoleControls(card, roles);
+			}
 		}
-		else
+		if (canUndo)
 		{
-			addRoleControls(card, roles);
+			card.add(Box.createVerticalStrut(6));
+			// Recovery action: lower visual rank than the role/spot controls above it.
+			WdrButton undoButton = new WdrButton("Undo last change", WdrButton.Variant.QUIET);
+			undoButton.addActionListener(e -> undo.run());
+			HostFormLayout.fullWidth(undoButton);
+			card.add(undoButton);
 		}
 		card.add(Box.createVerticalStrut(10));
 		addActionButtons(card);
@@ -110,79 +129,117 @@ final class HostLivePostView extends JPanel
 		repaint();
 	}
 
+	/** One-line reminder of what the Discord post shows, e.g. "Standard · W416 · catdog". */
+	private static String summary(Map<String, String> fields)
+	{
+		final StringBuilder summary = new StringBuilder();
+		appendSummary(summary, fields.get("tier"));
+		final String world = fields.get("world");
+		appendSummary(summary, world == null || world.isEmpty() ? null : "W" + world);
+		// Prefixed "ph:" to match how feed cards and the draft card render this value.
+		final String hub = fields.get("partyHub");
+		appendSummary(summary, hub == null || hub.isEmpty() ? null : "ph: " + hub);
+		return summary.toString();
+	}
+
+	private static void appendSummary(StringBuilder summary, String value)
+	{
+		if (value == null || value.isEmpty())
+		{
+			return;
+		}
+		if (summary.length() > 0)
+		{
+			summary.append(" · ");
+		}
+		summary.append(value);
+	}
+
 	void setStatus(String message, boolean error)
 	{
-		status.setText("<html><body style='width:180px'>" + HtmlEscape.escape(message) + "</body></html>");
+		status.setText(WrappedText.html(message, WrappedText.CARD));
 		status.setForeground(error ? WdrTheme.ERROR : WdrTheme.TEXT_DIM);
 	}
 
+	/**
+	 * Card for the host's live post.
+	 *
+	 * <p>Uses a neutral outline rather than a raid rail: the surface alone measures 1.14:1 against
+	 * the canvas, so an unbordered card dissolves into it. Outlined means "one thing"; railed means
+	 * "one of many".
+	 */
 	private static JPanel card()
 	{
 		JPanel card = new JPanel();
 		card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
 		card.setBackground(WdrTheme.CARD);
-		card.setBorder(BorderFactory.createCompoundBorder(
-			BorderFactory.createMatteBorder(2, 0, 0, 0, WdrTheme.GREEN),
-			BorderFactory.createEmptyBorder(9, 10, 10, 10)));
+		card.setBorder(WdrTheme.CARD_BORDER);
 		card.setAlignmentX(Component.LEFT_ALIGNMENT);
 		return card;
 	}
 
 	private static JLabel spotsChip(String spots)
 	{
-		JLabel chip = new JLabel((spots == null || spots.isEmpty() ? "-" : spots) + " open");
-		chip.setFont(FontManager.getRunescapeSmallFont());
+		// Not a control: bold primary ink conveys rank without a box that implies pressability.
+		JLabel chip = new JLabel(chipText(spots));
+		chip.setFont(FontManager.getRunescapeBoldFont());
 		chip.setForeground(WdrTheme.TEXT);
-		chip.setOpaque(true);
-		chip.setBackground(WdrTheme.FIELD);
-		chip.setBorder(BorderFactory.createCompoundBorder(
-			BorderFactory.createLineBorder(WdrTheme.BORDER),
-			BorderFactory.createEmptyBorder(1, 8, 1, 8)));
 		return chip;
+	}
+
+	/** Returns "Full" when spots is "+0", otherwise "N open". */
+	private static String chipText(String spots)
+	{
+		if ("+0".equals(spots))
+		{
+			return "Full";
+		}
+		return (spots == null || spots.isEmpty() ? "-" : spots) + " open";
 	}
 
 	private void addRoleControls(JPanel card, List<String> roles)
 	{
-		card.add(hint("Tap a role when it's filled:"));
+		card.add(hint("Mark role filled"));
 		card.add(Box.createVerticalStrut(5));
-		JPanel grid = new JPanel(new GridLayout(0, Math.min(2, roles.size()), 5, 5));
+		JPanel grid = new JPanel(new SplitGrid(5, 5));
 		grid.setOpaque(false);
 		for (String role : roles)
 		{
-			WdrButton button = new WdrButton(role, WdrButton.Variant.PRIMARY);
+			WdrButton button = new WdrButton(role, WdrButton.Variant.GHOST);
 			button.addActionListener(e -> fillRole.accept(role));
 			grid.add(button);
 		}
-		fullWidth(grid);
+		HostFormLayout.fullWidth(grid);
 		card.add(grid);
 		card.add(Box.createVerticalStrut(6));
-		WdrButton other = new WdrButton("Filled another spot", WdrButton.Variant.GHOST);
+		WdrButton other = new WdrButton("-1 other spot", WdrButton.Variant.GHOST);
 		other.addActionListener(e -> decrementSpot.run());
-		fullWidth(other);
+		HostFormLayout.fullWidth(other);
 		card.add(other);
 	}
 
 	private void addSpotControl(JPanel card)
 	{
-		card.add(hint("Someone joined? Drop a spot:"));
-		card.add(Box.createVerticalStrut(5));
-		WdrButton minusSpot = new WdrButton("−1 open spot", WdrButton.Variant.PRIMARY);
+		// No hint line: "-1 spot" already names its action.
+		WdrButton minusSpot = new WdrButton("-1 spot", WdrButton.Variant.PRIMARY);
 		minusSpot.addActionListener(e -> decrementSpot.run());
-		fullWidth(minusSpot);
+		HostFormLayout.fullWidth(minusSpot);
 		card.add(minusSpot);
 	}
 
 	private void addActionButtons(JPanel card)
 	{
-		WdrButton edit = new WdrButton("Edit details", WdrButton.Variant.GHOST);
+		JPanel row = new JPanel(new SplitGrid(6, 0));
+		row.setOpaque(false);
+		// Edit is a detour, not a peer of closing: QUIET rank keeps it below the DANGER close button.
+		WdrButton edit = new WdrButton("Edit details", WdrButton.Variant.QUIET);
 		edit.addActionListener(e -> beginEdit.run());
-		fullWidth(edit);
-		card.add(edit);
-		card.add(Box.createVerticalStrut(6));
+		row.add(edit);
 		WdrButton closeButton = new WdrButton("Close raid", WdrButton.Variant.DANGER);
 		closeButton.addActionListener(e -> close.run());
-		fullWidth(closeButton);
-		card.add(closeButton);
+		row.add(closeButton);
+		HostFormLayout.fullWidth(row);
+		card.add(row);
 	}
 
 	private static List<String> roles(Map<String, String> fields)
@@ -208,7 +265,7 @@ final class HostLivePostView extends JPanel
 		JLabel hint = new JLabel(text);
 		hint.setFont(FontManager.getRunescapeSmallFont());
 		hint.setForeground(WdrTheme.TEXT_DIM);
-		fullWidth(hint);
+		HostFormLayout.fullWidth(hint);
 		return hint;
 	}
 
@@ -220,12 +277,6 @@ final class HostLivePostView extends JPanel
 		row.setAlignmentX(Component.LEFT_ALIGNMENT);
 		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, row.getPreferredSize().height));
 		return row;
-	}
-
-	private static void fullWidth(JComponent component)
-	{
-		component.setAlignmentX(Component.LEFT_ALIGNMENT);
-		component.setMaximumSize(new Dimension(Integer.MAX_VALUE, component.getPreferredSize().height));
 	}
 
 	private static String raidLabel(String code)

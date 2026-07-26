@@ -26,10 +26,10 @@ package com.wedoraids.panel;
 
 import com.wedoraids.WeDoRaidsConfig;
 import com.wedoraids.feed.RaidType;
+import com.wedoraids.ui.SplitGrid;
 import com.wedoraids.ui.WdrTheme;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.GridLayout;
 import java.util.function.BiConsumer;
 import javax.swing.JComboBox;
 import javax.swing.JPanel;
@@ -45,7 +45,7 @@ final class RecruitFilterBar extends JPanel
 
 	RecruitFilterBar(WeDoRaidsConfig config, BiConsumer<String, String> saveFilter, Runnable onFilterChanged)
 	{
-		super(new GridLayout(1, 2, 4, 0));
+		super(new SplitGrid(4, 0));
 		this.config = config;
 		this.saveFilter = saveFilter;
 		this.onFilterChanged = onFilterChanged;
