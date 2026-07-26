@@ -99,25 +99,30 @@ final class HostLivePostView extends JPanel
 		}
 		card.add(Box.createVerticalStrut(4));
 		card.add(row(spotsChip(spots)));
-		card.add(Box.createVerticalStrut(9));
 
+		// Nothing between the chip and the actions once the party is full. "Party full" restated what the
+		// chip now says itself, in the card's quietest ink directly beneath its loudest — one fact rendered
+		// twice at opposite weights. What is left to do when full is close or edit, and both are below.
 		final List<String> roles = roles(fields);
-		if ("+0".equals(spots))
+		if (!"+0".equals(spots))
 		{
-			card.add(hint("Party full"));
-		}
-		else if (roles.isEmpty())
-		{
-			addSpotControl(card);
-		}
-		else
-		{
-			addRoleControls(card, roles);
+			card.add(Box.createVerticalStrut(9));
+			if (roles.isEmpty())
+			{
+				addSpotControl(card);
+			}
+			else
+			{
+				addRoleControls(card, roles);
+			}
 		}
 		if (canUndo)
 		{
 			card.add(Box.createVerticalStrut(6));
-			WdrButton undoButton = new WdrButton("Undo last change", WdrButton.Variant.GHOST);
+			// Recovery, not a forward action: it exists for the press a host regrets and should be findable
+			// then rather than competing before it. Boxed at GHOST it was the third identical button in a
+			// stack of five, all claiming the same rank as marking a role filled.
+			WdrButton undoButton = new WdrButton("Undo last change", WdrButton.Variant.QUIET);
 			undoButton.addActionListener(e -> undo.run());
 			fullWidth(undoButton);
 			card.add(undoButton);
@@ -201,7 +206,7 @@ final class HostLivePostView extends JPanel
 
 	private static JLabel spotsChip(String spots)
 	{
-		JLabel chip = new JLabel((spots == null || spots.isEmpty() ? "-" : spots) + " open");
+		JLabel chip = new JLabel(chipText(spots));
 		chip.setFont(FontManager.getRunescapeSmallFont());
 		chip.setForeground(WdrTheme.TEXT);
 		chip.setOpaque(true);
@@ -210,6 +215,20 @@ final class HostLivePostView extends JPanel
 			BorderFactory.createLineBorder(WdrTheme.BORDER),
 			BorderFactory.createEmptyBorder(1, 8, 1, 8)));
 		return chip;
+	}
+
+	/**
+	 * At zero this read "+0 open", which spent the brightest ink in the card on a null quantity and left
+	 * the reader to do the arithmetic. The chip is the one thing a host checks without reading anything
+	 * else, so it states the state.
+	 */
+	private static String chipText(String spots)
+	{
+		if ("+0".equals(spots))
+		{
+			return "Full";
+		}
+		return (spots == null || spots.isEmpty() ? "-" : spots) + " open";
 	}
 
 	private void addRoleControls(JPanel card, List<String> roles)
@@ -247,7 +266,9 @@ final class HostLivePostView extends JPanel
 	{
 		JPanel row = new JPanel(new GridLayout(1, 2, 6, 0));
 		row.setOpaque(false);
-		WdrButton edit = new WdrButton("Edit details", WdrButton.Variant.GHOST);
+		// A detour, not a peer of closing the raid. Boxed at GHOST it matched "Close raid" exactly, so a
+		// terminal action and a way to amend one read as the same weight of choice.
+		WdrButton edit = new WdrButton("Edit details", WdrButton.Variant.QUIET);
 		edit.addActionListener(e -> beginEdit.run());
 		row.add(edit);
 		WdrButton closeButton = new WdrButton("Close raid", WdrButton.Variant.DANGER);

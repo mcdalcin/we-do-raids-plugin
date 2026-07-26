@@ -198,9 +198,12 @@ public class HostFormPanel extends JPanel
 		this.expanded = expanded;
 		toggle.setText(expanded ? "Hide host form" : "Host raid");
 		// Collapsed, this is the way into hosting: accent-edged so a glance finds it, unfilled so it never
-		// claims the rank that belongs to the form's own submit. Expanded, the submit is on screen and
-		// this becomes the soft way back out, so it drops to a plain control and gives up its weight.
-		toggle.setVariant(expanded ? WdrButton.Variant.GHOST : WdrButton.Variant.ENTRY);
+		// claims the rank that belongs to the form's own submit. Expanded, the submit is on screen and this
+		// becomes a way back out — chrome that conceals, which is what QUIET is for. GHOST kept it boxed at
+		// primary ink, so the control for dismissing the form outranked the fields inside it; measured, it
+		// was the loudest thing above the card at 12.87:1 while the chips a host actually sets sat at 6.22:1.
+		// Unboxed at TEXT_DIM it matches More options, so both disclosure controls in the flow read alike.
+		toggle.setVariant(expanded ? WdrButton.Variant.QUIET : WdrButton.Variant.ENTRY);
 		applyToggleWeight();
 		raidForm.setVisible(expanded && (displayedLiveFields == null || editingLive));
 		livePostPanel.setVisible(expanded && displayedLiveFields != null && !editingLive);
