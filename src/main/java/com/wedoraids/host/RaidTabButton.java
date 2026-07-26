@@ -45,8 +45,9 @@ import net.runelite.client.ui.FontManager;
  * below them.
  *
  * <p>The raid rides on the fill rather than the label. A fill cannot both clear the surface it sits on
- * and stay dark enough to carry the hue as ink — {@link WdrTheme#ACCENT_EDGE} records the same conflict
- * for the primary control — so the fill carries the raid and the ink goes to {@link WdrTheme#TEXT}.
+ * and stay dark enough to carry the hue as ink, the same conflict {@link WdrTheme#ACCENT_EDGE}
+ * records for the primary control, so the fill carries the raid and the ink goes to
+ * {@link WdrTheme#TEXT}.
  */
 final class RaidTabButton extends JButton
 {

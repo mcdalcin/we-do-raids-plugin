@@ -39,7 +39,7 @@ import net.runelite.client.ui.FontManager;
  * We Do Raids palette, organised by role rather than by swatch: one role, one meaning.
  *
  * <p>Surfaces and borders come from RuneLite's {@link ColorScheme} so the panel sits in the client
- * rather than on top of it. Chroma belongs to raid identity — the hues on
+ * rather than on top of it. Chroma belongs to raid identity, the hues on
  * {@link com.wedoraids.feed.RaidType}, equalised at OKLCH lightness 0.76 so no raid outranks
  * another. Chrome stays neutral so it is never mistaken for raid data; failure is the one exception.
  */
@@ -56,8 +56,8 @@ public final class WdrTheme
 	/** Neutral outline for cards, fields and controls. */
 	public static final Color BORDER = ColorScheme.MEDIUM_GRAY_COLOR;
 	/**
-	 * Raised fill of a chosen toggle chip. Neutral by rule — raid hue means raid identity — and held
-	 * at 1.82:1 against the {@link #FIELD} surface it replaces so the state reads at a glance.
+	 * Raised fill of a chosen toggle chip. Always neutral, because raid hue means raid identity, and
+	 * held at 1.82:1 against the {@link #FIELD} surface it replaces so the state reads at a glance.
 	 */
 	public static final Color CHIP_CHOSEN = new Color(72, 72, 72);
 

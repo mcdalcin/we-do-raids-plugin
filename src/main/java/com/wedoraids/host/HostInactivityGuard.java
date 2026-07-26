@@ -159,7 +159,7 @@ final class HostInactivityGuard
 	}
 
 	/** Fires when the idle timer runs out, and the host still has a live post to lose. */
-	private void showPrompt()
+	void showPrompt()
 	{
 		if (liveState.isStopped() || !hasLivePost.getAsBoolean())
 		{

@@ -111,6 +111,9 @@ final class HostMoreOptions extends JPanel
 		partyHubHint.setForeground(WdrTheme.TEXT_DIM);
 		partyHubHint.setAlignmentX(Component.LEFT_ALIGNMENT);
 		setHubHint(false);
+		// A hub the host typed is theirs, so the generated note has to go when they type over ours.
+		// {@link #setPartyHub} sets the note after the text, so the auto-filled case still announces itself.
+		partyHub.getDocument().addDocumentListener(HostFormLayout.onChange(() -> setHubHint(false)));
 		return HostFormLayout.labeledWithHint("Party hub", partyHub, partyHubHint);
 	}
 

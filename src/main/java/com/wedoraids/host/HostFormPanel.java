@@ -109,6 +109,31 @@ public class HostFormPanel extends JPanel
 		repaint();
 	}
 
+	/**
+	 * Enters the live post from supplied values, for the design gallery.
+	 *
+	 * <p>The public entry point replays whatever this panel last submitted, which a caller cannot
+	 * supply from outside. Reaching the same state by clicking needs a bridge reply the gallery never
+	 * sends, so it hands the fields over instead while {@code lastSubmittedFields} stays private.
+	 */
+	void enterLivePost(Map<String, String> submitted, String messageId)
+	{
+		lastSubmittedFields = new LinkedHashMap<>(submitted);
+		enterLivePost(messageId);
+	}
+
+	/** Offers an undo, for the design gallery: the real one follows an update round trip. */
+	void offerUndo(Map<String, String> previous)
+	{
+		livePostPanel.offerUndo(previous);
+	}
+
+	/** Shows the idle prompt now, for the design gallery: the real one waits out a seven-minute timer. */
+	void promptInactivity()
+	{
+		inactivityGuard.showPrompt();
+	}
+
 	public void exitLivePost()
 	{
 		livePostPanel.exitLivePost();
